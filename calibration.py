@@ -117,8 +117,9 @@ def get_calibrated_scores(y_true: np.ndarray[bool], scores: np.ndarray[float]) -
     y_sorted = _sort_by_scores(y_true, scores)
     prob_calibrated = monotonic_function_from_binary_values(y_sorted)
     indices = np.argsort(scores)
-    scores[indices] = prob_calibrated
-    return scores
+    calib_scores = np.empty_like(scores)
+    calib_scores[indices] = prob_calibrated
+    return calib_scores
 
 
 def test_calibrated_scores():
@@ -128,13 +129,21 @@ def test_calibrated_scores():
     assert list(calib_scores) == [0.5, 0.5, 0.0, 0.0, 1.0]
 
 
-def plot_calibrated_curve(scores: np.ndarray, calibrated_scores: np.ndarray):
-    plt.plot(scores, calibrated_scores, label="calibrated")
-    plt.plot(scores, scores, "--", label="identity")
+def plot_calibrated_curve(scores: np.ndarray, calibrated_scores: np.ndarray,
+                          use_scores_as_x_axis=False):
+    inds = np.argsort(scores)
+    if use_scores_as_x_axis:
+        x = scores[inds]
+        xlim = (0, 1)
+    else:
+        x = np.arange(len(scores))
+        xlim = (0, len(x))
+    plt.plot(x, calibrated_scores[inds], label="calibrated")
+    plt.plot(x, scores[inds], "--", label="identity")
     plt.xlabel("scores")
     plt.ylabel("calibrated scores")
     plt.title("calibration curve")
-    plt.xlim((0, 1))
+    plt.xlim(xlim)
     plt.ylim((0, 1))
     plt.legend()
     plt.show()
