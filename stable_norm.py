@@ -4,7 +4,7 @@ import tensorflow as tf
 
 
 # calculates L-ord norm over last axis
-# input mast have rank = 2, output will have rank = 1
+# input must have rank = 2, output will have rank = 1
 def stable_norm(tensor, ord):
     tf.debugging.assert_equal(tf.rank(tensor), 2)
 
