@@ -34,23 +34,3 @@ def split_dataset(dataset) -> tuple:
     data = IndexTakerGenerator(dataset, 0)
     labels = IndexTakerGenerator(dataset, 1)
     return data, labels
-
-
-'''
-class _IndexTaker:
-    def __init__(self, parent):
-        self._cur = -1
-        self._parent = parent
-
-    def __next__(self):
-        self._cur += 1
-        if self._cur >= self.__len__():
-            raise StopIteration
-        return self._parent[self._cur]
-
-    def __len__(self):
-        return self._parent.__len__()
-
-    def __iter__(self):
-        return self
-'''
