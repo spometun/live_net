@@ -1,7 +1,11 @@
+import importlib
+
 from . import gen_utils
 from . import stat_utils
+from . import optimizer
+from . import visual_utils
 
-import importlib
 importlib.reload(gen_utils)
 importlib.reload(stat_utils)
-print("here")
+importlib.reload(optimizer)
+importlib.reload(visual_utils)
