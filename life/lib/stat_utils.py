@@ -1,6 +1,7 @@
 from typing import Union, Optional, Any
 import numpy as np
 from matplotlib import pyplot as plt
+import scipy
 
 
 class AccumStat:
@@ -15,7 +16,6 @@ class AccumStat:
         except AttributeError:
             pass
         self._values += list(value.flatten())
-
 
     def get_abs_max(self) -> float:
         vals = np.array(self._values)
@@ -32,3 +32,12 @@ class AccumStat:
         plt.plot(sorted(self._values))
         plt.grid()
         plt.show()
+
+
+def get_slope_and_pvalue(values: list):
+    y = np.array(values)
+    x = np.arange(len(y))
+    result = scipy.stats.linregress(x, y, alternative="less")
+    return result.slope, result.pvalue
+
+
