@@ -34,7 +34,6 @@ class Neuron():
         return self._output
 
     def clear_output(self):
-        print(f"clear {type(self)} {self._output is None}")
         self._output = None
 
     @abc.abstractmethod
@@ -63,7 +62,6 @@ class DestinationNeuron(Neuron):
         return synapse
 
     def clear_output(self):
-        print(f"try {type(self)} {self._output is None}")
         if self._output is not None:
             for synapse in self.dendrites:
                 synapse.source.clear_output()
@@ -131,15 +129,17 @@ class LiveNet(nn.Module):
                 output.connect_from(neuron)
         self.p = nn.Parameter(torch.tensor(0.0))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         assert len(x.shape) == 2, "Invalid input shape"
         assert x.shape[1] == len(self.inputs), "Invalid input dimension"
         for output in self.outputs:
             output.clear_output()
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i])
-        for output in self.outputs:
-            output.compute_output()
+        y = torch.zeros(x.shape[0], len(self.outputs))
+        for i, output in enumerate(self.outputs):
+            y[:, i] = output.compute_output()
+        return y
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
         name = f"{name_prefix}{self._n_params}"
@@ -149,12 +149,19 @@ class LiveNet(nn.Module):
         return param
 
 
+def export_onnx(model: nn.Module, dummy_input):
+    torch.onnx.export(model, dummy_input, "/home/spometun/model.onnx", verbose=False)
+
+
 if __name__ == "__main__":
     lib.utils.set_seed()
     x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
     net = LiveNet(2, 1, 2)
     net.forward(x)
     net.forward(x)
+
+    export_onnx(net, x)
+
     s = pickle.dumps(net.p)
     p = [p for p in net.named_parameters()]
 
