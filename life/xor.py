@@ -103,9 +103,13 @@ class RegularNeuron(SourceNeuron, DestinationNeuron):
         self.b = module.obtain_float_parameter("n")
 
     def _compute_output(self) -> torch.Tensor:
-        output = self.b
-        for synapse in self.dendrites:
-            output = output + synapse.output()
+        if len(self.dendrites) == 0:
+            output = self.b
+        else:
+            output = self.dendrites[0].output()
+            for synapse in self.dendrites[1:]:
+                output = output + synapse.output()
+            output = output + self.b
         output = torch.nn.functional.relu(output)
         return output
 
@@ -114,6 +118,7 @@ class LiveNet(nn.Module):
     def __init__(self, n_inputs, n_middle, n_outputs):
         super().__init__()
         self._n_params = 0
+        self._name_counters = {}
         self.inputs = [DataNeuron(self) for _ in range(n_inputs)]
         self.outputs = [RegularNeuron(self) for _ in range(n_outputs)]
         '''
@@ -127,11 +132,18 @@ class LiveNet(nn.Module):
                 input_.connect_to(neuron)
             for output in self.outputs:
                 output.connect_from(neuron)
-        self.p = nn.Parameter(torch.tensor(0.0))
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
-        assert x.shape[1] == len(self.inputs), "Invalid input dimension"
+        # assert x.shape[1] == len(self.inputs), "Invalid input dimension"
+        '''
+        s1 = self.get_parameter("s1")
+        s2 = self.get_parameter("s2")
+        n0 = self.get_parameter("n0")
+        y = torch.zeros(x.shape[0], len(self.outputs))
+        y[:, 0] = nn.functional.relu(x[:, 0] * s1 + x[:, 1] * s2 + n0)
+        return y
+'''
         for output in self.outputs:
             output.clear_output()
         for i in range(x.shape[1]):
@@ -142,7 +154,10 @@ class LiveNet(nn.Module):
         return y
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
-        name = f"{name_prefix}{self._n_params}"
+        if name_prefix not in self._name_counters:
+            self._name_counters[name_prefix] = -1
+        self._name_counters[name_prefix] += 1
+        name = f"{name_prefix}{self._name_counters[name_prefix]}"
         self._n_params += 1
         param = nn.Parameter(torch.tensor(0.0))
         self.register_parameter(name, param)
@@ -156,14 +171,14 @@ def export_onnx(model: nn.Module, dummy_input):
 if __name__ == "__main__":
     lib.utils.set_seed()
     x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
-    net = LiveNet(2, 1, 2)
+    net = LiveNet(2, 2, 1)
     net.forward(x)
     net.forward(x)
 
     export_onnx(net, x)
 
-    s = pickle.dumps(net.p)
     p = [p for p in net.named_parameters()]
+    s1 = net.get_parameter("s1")
 
     print("Here")
     # net = LiveNet(2, 1)
