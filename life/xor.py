@@ -7,7 +7,9 @@ import torch.nn as nn
 import random
 import pickle
 
+
 import lib
+from lib.simple_log import LOG
 
 
 def test_dev():
@@ -175,10 +177,12 @@ if __name__ == "__main__":
     net.forward(x)
     net.forward(x)
 
+    LOG('a')
     export_onnx(net, x)
+    LOG('b')
 
     p = [p for p in net.named_parameters()]
     s1 = net.get_parameter("s1")
 
-    print("Here")
+    LOG("Here")
     # net = LiveNet(2, 1)
