@@ -132,6 +132,7 @@ class LiveNet(nn.Module):
         self._name_counters = {}
         self.inputs = [DataNeuron(self) for _ in range(n_inputs)]
         self.outputs = [RegularNeuron(self) for _ in range(n_outputs)]
+        self.root = NodesHolder(self.outputs)
         '''
         for input_ in self.inputs:
             for output in self.outputs:
@@ -155,8 +156,7 @@ class LiveNet(nn.Module):
         y[:, 0] = nn.functional.relu(x[:, 0] * s1 + x[:, 1] * s2 + n0)
         return y
 '''
-        for output in self.outputs:
-            output.visit("clear_output")
+        self.root.visit("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i])
         y = torch.zeros(x.shape[0], len(self.outputs))
