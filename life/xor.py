@@ -1,4 +1,6 @@
+import typing
 from typing import List, Self
+from overrides import override
 import numpy as np
 import pytest
 import abc
@@ -6,6 +8,7 @@ import torch
 import torch.nn as nn
 import random
 import pickle
+from lib.graph import GraphNode, NodesHolder
 
 
 import lib
@@ -24,12 +27,13 @@ class Visitable:
             pass
 
 
-class Neuron():
+class Neuron(GraphNode):
     def __init__(self, module: "LiveNet"):
         super().__init__()
         self.module = module
         self._output = None
 
+    @typing.final
     def compute_output(self) -> torch.Tensor:
         if self._output is None:
             self._output = self._compute_output()
@@ -52,6 +56,10 @@ class SourceNeuron(Neuron):
         synapse = Synapse(self, destination)
         return synapse
 
+    @override
+    def get_adjacent_nodes(self) -> List[GraphNode]:
+        return []
+
 
 # noinspection PyAbstractClass
 class DestinationNeuron(Neuron):
@@ -63,11 +71,9 @@ class DestinationNeuron(Neuron):
         synapse = Synapse(source, self)
         return synapse
 
-    def clear_output(self):
-        if self._output is not None:
-            for synapse in self.dendrites:
-                synapse.source.clear_output()
-            super().clear_output()
+    @override
+    def get_adjacent_nodes(self) -> List[GraphNode]:
+        return self.dendrites
 
 
 class DataNeuron(SourceNeuron):
@@ -79,10 +85,10 @@ class DataNeuron(SourceNeuron):
         self._output = value
 
     def _compute_output(self) -> torch.Tensor:
-        raise NotImplementedError("Should never be called")
+        raise RuntimeError("Should never be called")
 
 
-class Synapse():
+class Synapse(GraphNode):
     def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
         assert source != destination
         self.source = source
@@ -98,8 +104,11 @@ class Synapse():
         output = self.k * self.source.compute_output()
         return output
 
+    def get_adjacent_nodes(self) -> List[GraphNode]:
+        return [self.source]
 
-class RegularNeuron(SourceNeuron, DestinationNeuron):
+
+class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, module: "LiveNet"):
         super().__init__(module)
         self.b = module.obtain_float_parameter("n")
@@ -112,7 +121,7 @@ class RegularNeuron(SourceNeuron, DestinationNeuron):
             for synapse in self.dendrites[1:]:
                 output = output + synapse.output()
             output = output + self.b
-        output = torch.nn.functional.relu(output)
+        output = torch.relu(output)
         return output
 
 
@@ -147,7 +156,7 @@ class LiveNet(nn.Module):
         return y
 '''
         for output in self.outputs:
-            output.clear_output()
+            output.visit("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i])
         y = torch.zeros(x.shape[0], len(self.outputs))

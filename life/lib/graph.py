@@ -2,6 +2,8 @@ import pytest
 from typing import List
 import abc
 
+from life.lib.simple_log import LOG
+
 
 class GraphNode:
 
@@ -16,10 +18,13 @@ class GraphNode:
         del visited_ids
         del visited_nodes
 
-    def _visit(self, function_name: str, visited_ids, visited_nodes):
+    def _visit(self, function_name: str, visited_ids: set, visited_nodes: set):
         if id(self) in visited_ids:
             return
-        exec(f"self.{function_name}()")
+        try:
+            exec(f"self.{function_name}()")
+        except AttributeError:
+            pass
         visited_ids.add(id(self))
         visited_nodes.append(self)
         for node in self.get_adjacent_nodes():
