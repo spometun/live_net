@@ -26,6 +26,14 @@ class GraphNode:
             node._visit(function_name, visited_ids=visited_ids, visited_nodes=visited_nodes)
 
 
+class NodesHolder(GraphNode):
+    def __init__(self, nodes: List[GraphNode]):
+        self.nodes = nodes
+
+    def get_adjacent_nodes(self) -> List[GraphNode]:
+        return self.nodes
+
+
 def test_graph():
     class GL(GraphNode):
         _call_counter = 0
