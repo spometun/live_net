@@ -8,7 +8,7 @@ class MyOptimizer(torch.optim.Optimizer):
         self._lr = lr
         # super(MyOptimizer, self).__init__(parameters, {})
 
-    def zero_grad(self,) -> None:
+    def zero_grad(self) -> None:
         for p in self._params:
             if p.grad is not None:
                 p.grad.zero_()
@@ -17,3 +17,16 @@ class MyOptimizer(torch.optim.Optimizer):
         for p in self._params:
             # p.data = p.data * (1 - torch.sign(p.grad.data) * self._lr)
             p.data.add_(p.grad.data, alpha=-self._lr)
+
+
+class SGD1:
+    def __init__(self, parameter: torch.Tensor, learning_rate=0.01):
+        self.parameter = parameter
+        self.learning_rate = learning_rate
+
+    def zero_grad(self):
+        self.parameter.grad.zero()
+
+    def step(self):
+        self.parameter.data.add_(self.parameter.grad.data, alpha=-self.learning_rate)
+
