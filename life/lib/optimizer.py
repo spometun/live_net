@@ -25,8 +25,11 @@ class SGD1:
         self.learning_rate = learning_rate
 
     def zero_grad(self):
-        self.parameter.grad.zero()
+        with torch.no_grad():
+            self.parameter.grad.zero_()
 
     def step(self):
-        self.parameter.data.add_(self.parameter.grad.data, alpha=-self.learning_rate)
+        with torch.no_grad():
+            self.parameter += -self.learning_rate * self.parameter.grad
+            pass
 

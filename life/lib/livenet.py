@@ -1,5 +1,5 @@
 import typing
-from typing import List, Self
+from typing import List, Self, Union
 from overrides import override
 import numpy as np
 import pytest
@@ -55,11 +55,12 @@ class SourceNeuron(Neuron):
 
 
 class DestinationNeuron(Neuron):
-    def __init__(self, context: "Context"):
+    def __init__(self, context: "Context", activation):
         super().__init__(context)
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter("n")
         self.optimizer = optimizer.SGD1(self.b)
+        self.activation = activation
 
     def _compute_output(self) -> torch.Tensor:
         if len(self.dendrites) == 0:
@@ -69,7 +70,8 @@ class DestinationNeuron(Neuron):
             for synapse in self.dendrites[1:]:
                 output = output + synapse.output()
             output = output + self.b
-        output = torch.relu(output)
+        if self.activation is not None:
+            output = self.activation(output)
         return output
 
     def connect_from(self, source: SourceNeuron):
@@ -94,12 +96,12 @@ class DataNeuron(SourceNeuron):
 
 
 class RegularNeuron(DestinationNeuron, SourceNeuron):
-    def __init__(self, context: "Context"):
-        super().__init__(context)
+    def __init__(self, context: "Context", activation):
+        super().__init__(context, activation)
 
 
 class Synapse(GraphNode):
-    def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
+    def __init__(self, source: SourceNeuron, destination: Union[DestinationNeuron, RegularNeuron]):
         assert source != destination
         self.source = source
         self.destination = destination
@@ -142,7 +144,7 @@ class LiveNet(nn.Module):
         super().__init__()
         self.context = Context(self)
         self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
-        self.outputs = [DestinationNeuron(self.context) for _ in range(n_outputs)]
+        self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
         self.root = NodesHolder(self.outputs)
         '''
         for input_ in self.inputs:
@@ -150,7 +152,7 @@ class LiveNet(nn.Module):
                 input_.connect_to(output)
                 '''
         for i in range(n_middle):
-            neuron = RegularNeuron(self.context)
+            neuron = RegularNeuron(self.context, activation=torch.nn.ReLU())
             for input_ in self.inputs:
                 input_.connect_to(neuron)
             for output in self.outputs:
@@ -170,10 +172,28 @@ class LiveNet(nn.Module):
         self.root.visit("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i])
-        y = torch.zeros(x.shape[0], len(self.outputs))
+        y = torch.empty(x.shape[0], len(self.outputs))
         for i, output in enumerate(self.outputs):
             y[:, i] = output.compute_output()
         return y
+
+    def zero_grad(self, set_to_none: bool = True):
+        assert set_to_none is False
+        self.root.visit("optimizer.zero_grad")
+
+    def step(self):
+        self.root.visit("optimizer.step")
+
+
+class LiveNetOptimizer:
+    def __init__(self, network: LiveNet):
+        self.network = network
+
+    def zero_grad(self):
+        self.network.zero_grad(False)
+
+    def step(self):
+        self.network.step()
 
 
 def export_onnx(model: nn.Module, dummy_input):
