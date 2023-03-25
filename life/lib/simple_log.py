@@ -33,7 +33,7 @@ def LOG(*args):
     if is_pycharm_ipython_match is not None:
         location = ""
 
-    print(f"I\u02c8{time_:.6f}", *args, location)
+    print(f"I\u02c8{time_:.3f}", *args, location)
 
 
 
