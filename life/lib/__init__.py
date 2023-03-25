@@ -20,3 +20,10 @@ importlib.reload(utils)
 
 from . import livenet
 importlib.reload(livenet)
+
+from . import datasets
+importlib.reload(datasets)
+
+from . import nets
+importlib.reload(nets)
+
