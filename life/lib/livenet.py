@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import random
 import pickle
+import math
 from life.lib.graph import GraphNode, NodesHolder
 import life.lib.utils as utils
 
@@ -62,6 +63,9 @@ class DestinationNeuron(Neuron):
         self.optimizer = optimizer.SGD1(self.b)
         self.activation = activation
 
+    def on_grad_update(self):
+        self.optimizer.step()
+
     def _compute_output(self) -> torch.Tensor:
         if len(self.dendrites) == 0:
             output = self.b
@@ -105,6 +109,7 @@ class Synapse(GraphNode):
         assert source != destination
         self.source = source
         self.destination = destination
+        self.context = source.context
         assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
         destination.dendrites.append(self)
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
@@ -113,6 +118,13 @@ class Synapse(GraphNode):
         with torch.no_grad():
             self.k[...] = torch.tensor(random.random())
         self.optimizer = optimizer.SGD1(self.k)
+
+    def on_grad_update(self):
+        self.optimizer.step()
+        with torch.no_grad():
+            value = self.k.detach().item()
+            sign = math.copysign(1.0, value)
+            self.k += - sign * self.context.decay
 
     def output(self):
         output = self.k * self.source.compute_output()
@@ -125,15 +137,16 @@ class Synapse(GraphNode):
 class Context:
     def __init__(self, module: nn.Module):
         self.module = module
-        self._n_params = 0
-        self._name_counters = {}
+        self.n_params = 0
+        self.name_counters = {}
+        self.decay = 0.0
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
-        if name_prefix not in self._name_counters:
-            self._name_counters[name_prefix] = -1
-        self._name_counters[name_prefix] += 1
-        name = f"{name_prefix}{self._name_counters[name_prefix]}"
-        self._n_params += 1
+        if name_prefix not in self.name_counters:
+            self.name_counters[name_prefix] = -1
+        self.name_counters[name_prefix] += 1
+        name = f"{name_prefix}{self.name_counters[name_prefix]}"
+        self.n_params += 1
         param = nn.Parameter(torch.tensor(0.0))
         self.module.register_parameter(name, param)
         return param
@@ -177,23 +190,27 @@ class LiveNet(nn.Module):
             y[:, i] = output.compute_output()
         return y
 
+    def visit(self, func):
+        self.root.visit(func)
+
     def zero_grad(self, set_to_none: bool = True):
         assert set_to_none is False
         self.root.visit("optimizer.zero_grad")
 
-    def step(self):
-        self.root.visit("optimizer.step")
+    def on_grad_update(self):
+        self.root.visit("on_grad_update")
 
 
 class LiveNetOptimizer:
-    def __init__(self, network: LiveNet):
+    def __init__(self, network: LiveNet, decay=0.0):
         self.network = network
+        self.network.context.decay = decay
 
     def zero_grad(self):
         self.network.zero_grad(False)
 
     def step(self):
-        self.network.step()
+        self.network.on_grad_update()
 
 
 def export_onnx(model: nn.Module, dummy_input):
