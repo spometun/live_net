@@ -1,5 +1,8 @@
 import importlib
 
+from . import simple_log
+importlib.reload(simple_log)
+
 from . import gen_utils
 importlib.reload(gen_utils)
 
