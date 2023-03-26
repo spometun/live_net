@@ -6,9 +6,9 @@ import pytest
 import abc
 import torch
 import torch.nn as nn
-import random
 import pickle
 import math
+import random
 from life.lib.graph import GraphNode, NodesHolder
 import life.lib.utils as utils
 
@@ -116,7 +116,7 @@ class Synapse(GraphNode):
         source.axons.append(self)
         self.k = source.context.obtain_float_parameter("s")
         with torch.no_grad():
-            self.k[...] = torch.tensor(random.random())
+            self.k[...] = torch.tensor(self.context.random.uniform(-1, 1))
         self.optimizer = optimizer.SGD1(self.k)
 
     def on_grad_update(self):
@@ -135,7 +135,8 @@ class Synapse(GraphNode):
 
 
 class Context:
-    def __init__(self, module: nn.Module):
+    def __init__(self, module: nn.Module, seed):
+        self.random = random.Random(seed)
         self.module = module
         self.n_params = 0
         self.name_counters = {}
@@ -153,9 +154,9 @@ class Context:
 
 
 class LiveNet(nn.Module):
-    def __init__(self, n_inputs, n_middle, n_outputs):
+    def __init__(self, n_inputs, n_middle, n_outputs, seed=0):
         super().__init__()
-        self.context = Context(self)
+        self.context = Context(self, seed)
         self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
         self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
         self.root = NodesHolder(self.outputs)
