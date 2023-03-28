@@ -20,7 +20,7 @@ class MyOptimizer(torch.optim.Optimizer):
 
 
 class SGD1:
-    def __init__(self, parameter: torch.Tensor, learning_rate=0.01):
+    def __init__(self, parameter: torch.Tensor, learning_rate=0.001):
         self.parameter = parameter
         self.learning_rate = learning_rate
 
@@ -31,5 +31,4 @@ class SGD1:
     def step(self):
         with torch.no_grad():
             self.parameter += -self.learning_rate * self.parameter.grad
-            pass
 

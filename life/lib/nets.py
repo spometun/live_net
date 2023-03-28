@@ -6,9 +6,16 @@ from torch import nn as nn
 from life import lib as lib
 
 
-def criterion(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
+def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     y_hat = torch.nn.functional.sigmoid(logits)
+    assert y_hat.detach().shape[1] == 1
+    label = label.float()
     return torch.nn.functional.binary_cross_entropy(y_hat, label) / math.log(2)
+
+
+def criterion_n(inputs: torch.Tensor, labels: torch.Tensor):
+    labels = torch.squeeze(labels, 1)
+    return nn.functional.cross_entropy(inputs, labels) / math.log(2)
 
 
 class XOR(nn.Module):
@@ -69,6 +76,17 @@ class PYRAMID(torch.nn.Module):
         return y_hat
 
 
+class PERCEPTRON(torch.nn.Module):
+    def __init__(self, n_inputs, n_outputs):
+        super().__init__()
+        self.linear1 = nn.Linear(n_inputs, n_outputs)
+
+    def forward(self, input_):
+        x = self.linear1(input_)
+        y_hat = x
+        return y_hat
+
+
 def create_livenet_odd():
     network = lib.livenet.LiveNet(1, 2, 1)
     with torch.no_grad():
@@ -80,6 +98,24 @@ def create_livenet_odd():
         network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(-1)
         network.inputs[0].axons[1].destination.axons[0].destination.b[...] = torch.tensor(1)
     return network
+
+
+def create_livenet_odd_2():
+    network = lib.livenet.LiveNet(1, 2, 2)
+    with torch.no_grad():
+        network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
+        network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)
+
+        network.inputs[0].axons[0].destination.b[...] = torch.tensor(-3.1)
+        network.inputs[0].axons[1].destination.b[...] = torch.tensor(1)
+
+        network.inputs[0].axons[0].destination.axons[0].k[...] = torch.tensor(1.1)
+        network.inputs[0].axons[0].destination.axons[1].k[...] = torch.tensor(-1.2)
+        network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(1.3)
+        network.inputs[0].axons[1].destination.axons[1].k[...] = torch.tensor(-1)
+
+    return network
+
 
 
 def create_livenet_pyramid():
