@@ -66,14 +66,22 @@ class DestinationNeuron(Neuron):
     def on_grad_update(self):
         self.optimizer.step()
 
+
     def _compute_output(self) -> torch.Tensor:
         if len(self.dendrites) == 0:
             output = self.b
         else:
-            output = self.dendrites[0].output()
-            for synapse in self.dendrites[1:]:
-                output = output + synapse.output()
-            output = output + self.b
+            if self.context.reduce_sum_computation:
+                outputs = []
+                for synapse in self.dendrites:
+                    outputs.append(synapse.output())
+                all_ = torch.cat(outputs, 1)
+                output = torch.sum(all_, dim=1, keepdim=True) + self.b
+            else:
+                output = self.dendrites[0].output()
+                for synapse in self.dendrites[1:]:
+                    output = output + synapse.output()
+                output = output + self.b
         if self.activation is not None:
             output = self.activation(output)
         return output
@@ -92,7 +100,7 @@ class DataNeuron(SourceNeuron):
         super().__init__(context)
 
     def set_output(self, value: torch.Tensor):
-        assert len(value.shape) == 1
+        # assert len(value.shape) == 1
         self._output = value
 
     def _compute_output(self) -> torch.Tensor:
@@ -115,9 +123,12 @@ class Synapse(GraphNode):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         source.axons.append(self)
         self.k = source.context.obtain_float_parameter("s")
-        with torch.no_grad():
-            self.k[...] = torch.tensor(self.context.random.uniform(-1, 1))
         self.optimizer = optimizer.SGD1(self.k)
+
+    def init_weight(self):
+        v = math.sqrt(6 / len(self.destination.dendrites))  # should be 12 for ReLu?
+        with torch.no_grad():
+            self.k[...] = self.context.random.uniform(-v, v)
 
     def on_grad_update(self):
         self.optimizer.step()
@@ -141,6 +152,7 @@ class Context:
         self.n_params = 0
         self.name_counters = {}
         self.decay = 0.0
+        self.reduce_sum_computation = False
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
         if name_prefix not in self.name_counters:
@@ -160,17 +172,18 @@ class LiveNet(nn.Module):
         self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
         self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
         self.root = NodesHolder(self.outputs)
-        '''
-        for input_ in self.inputs:
-            for output in self.outputs:
-                input_.connect_to(output)
-                '''
-        for i in range(n_middle):
-            neuron = RegularNeuron(self.context, activation=torch.nn.ReLU())
+        if n_middle is None:
             for input_ in self.inputs:
-                input_.connect_to(neuron)
-            for output in self.outputs:
-                output.connect_from(neuron)
+                for output in self.outputs:
+                    input_.connect_to(output)
+        else:
+            for i in range(n_middle):
+                neuron = RegularNeuron(self.context, activation=torch.nn.ReLU())
+                for input_ in self.inputs:
+                    input_.connect_to(neuron)
+                for output in self.outputs:
+                    output.connect_from(neuron)
+        self.root.visit("init_weight")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
@@ -185,10 +198,12 @@ class LiveNet(nn.Module):
 '''
         self.root.visit("clear_output")
         for i in range(x.shape[1]):
-            self.inputs[i].set_output(x[:, i])
-        y = torch.empty(x.shape[0], len(self.outputs))
-        for i, output in enumerate(self.outputs):
-            y[:, i] = output.compute_output()
+            self.inputs[i].set_output(x[:, i: i + 1])
+        # y = torch.empty(x.shape[0], len(self.outputs))
+        outputs = [o.compute_output() for o in self.outputs]
+        y = torch.cat(outputs, dim=1)
+        # for i, output in enumerate(self.outputs):
+        #     y[:, i] = output.compute_output().squeeze(1)
         return y
 
     def visit(self, func):
@@ -221,7 +236,7 @@ def export_onnx(model: nn.Module, dummy_input):
 if __name__ == "__main__":
     utils.set_seed()
     x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
-    net = LiveNet(2, 2, 1)
+    net = LiveNet(2, 4, 1)
     net.forward(x)
     net.forward(x)
 
