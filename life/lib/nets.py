@@ -13,7 +13,7 @@ def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     return torch.nn.functional.binary_cross_entropy(y_hat, label) / math.log(2)
 
 
-def criterion_n(inputs: torch.Tensor, labels: torch.Tensor):
+def criterion_n(inputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     labels = torch.squeeze(labels, 1)
     return nn.functional.cross_entropy(inputs, labels) / math.log(2)
 
@@ -85,6 +85,9 @@ class PERCEPTRON(torch.nn.Module):
         x = self.linear1(input_)
         y_hat = x
         return y_hat
+
+    def input_shape(self):
+        return torch.Size([self.linear1.in_features])
 
 
 def create_livenet_odd():

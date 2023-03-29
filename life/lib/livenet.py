@@ -66,7 +66,6 @@ class DestinationNeuron(Neuron):
     def on_grad_update(self):
         self.optimizer.step()
 
-
     def _compute_output(self) -> torch.Tensor:
         if len(self.dendrites) == 0:
             output = self.b
@@ -126,7 +125,7 @@ class Synapse(GraphNode):
         self.optimizer = optimizer.SGD1(self.k)
 
     def init_weight(self):
-        v = math.sqrt(6 / len(self.destination.dendrites))  # should be 12 for ReLu?
+        v = math.sqrt(1 / len(self.destination.dendrites))
         with torch.no_grad():
             self.k[...] = self.context.random.uniform(-v, v)
 
@@ -187,23 +186,11 @@ class LiveNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
-        # assert x.shape[1] == len(self.inputs), "Invalid input dimension"
-        '''
-        s1 = self.get_parameter("s1")
-        s2 = self.get_parameter("s2")
-        n0 = self.get_parameter("n0")
-        y = torch.zeros(x.shape[0], len(self.outputs))
-        y[:, 0] = nn.functional.relu(x[:, 0] * s1 + x[:, 1] * s2 + n0)
-        return y
-'''
         self.root.visit("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i: i + 1])
-        # y = torch.empty(x.shape[0], len(self.outputs))
         outputs = [o.compute_output() for o in self.outputs]
         y = torch.cat(outputs, dim=1)
-        # for i, output in enumerate(self.outputs):
-        #     y[:, i] = output.compute_output().squeeze(1)
         return y
 
     def visit(self, func):
@@ -215,6 +202,9 @@ class LiveNet(nn.Module):
 
     def on_grad_update(self):
         self.root.visit("on_grad_update")
+
+    def input_shape(self):
+        return torch.Size([len(self.inputs)])
 
 
 class LiveNetOptimizer:
@@ -229,7 +219,8 @@ class LiveNetOptimizer:
         self.network.on_grad_update()
 
 
-def export_onnx(model: nn.Module, dummy_input):
+def export_onnx(model: nn.Module):
+    dummy_input = torch.zeros((1, *net.input_shape()))
     torch.onnx.export(model, dummy_input, "/home/spometun/model.onnx", verbose=False)
 
 
@@ -237,11 +228,12 @@ if __name__ == "__main__":
     utils.set_seed()
     x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
     net = LiveNet(2, 4, 1)
+    net.context.reduce_sum_computation = True
     net.forward(x)
     net.forward(x)
 
     LOG('a')
-    export_onnx(net, x)
+    export_onnx(net)
     LOG('b')
 
     p = [p for p in net.named_parameters()]

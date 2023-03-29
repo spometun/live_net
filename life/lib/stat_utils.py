@@ -11,10 +11,13 @@ class AccumStat:
             self.add_value(value)
 
     def add_value(self, value: Union[np.ndarray, Any]):
-        try:
-            value = value.numpy()
-        except AttributeError:
-            pass
+        if isinstance(value, str):
+            return
+        if isinstance(value, list) or isinstance(value, tuple):
+            for el in value:
+                self.add_value(el)
+            return
+
         self._values += list(value.flatten())
 
     def get_abs_max(self) -> float:
