@@ -39,3 +39,35 @@ def calc_batch_times(network: torch.nn.Module,
             else:
                 batch_size = batch_size // 3 * 4
     return sizes, times
+
+
+def get_parameters_copy(network: torch.nn.Module):
+    params = [p.detach().clone() for p in network.parameters()]
+    return params
+
+
+def set_parameters(network: torch.nn.Module, params: list):
+    net_params = [p for p in network.parameters()]
+    assert len(net_params) == len(params)
+    with torch.no_grad():
+        for i, p in enumerate(net_params):
+            net_params[i][...] = torch.tensor(params[i][...])
+
+
+def add_noise_to_params(params: list, a, b):
+    with torch.no_grad():
+        for i in range(len(params)):
+            p = params[i]
+            try:
+                p = p.numpy()
+            except AttributeError:
+                pass
+
+            with np.nditer(p, flags=['multi_index']) as it:
+                for _ in it:
+                    index = it.multi_index
+                    val = float(p[*index])
+                    val = random.uniform(-b, b) + (1 + random.uniform(-a, a)) * val
+                    params[i][*index] = val
+
+

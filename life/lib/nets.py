@@ -77,8 +77,9 @@ class PYRAMID(torch.nn.Module):
 
 
 class PERCEPTRON(torch.nn.Module):
-    def __init__(self, n_inputs, n_outputs):
+    def __init__(self, n_inputs, n_outputs, l1=0.0):
         super().__init__()
+        self.alpha_l1 = l1
         self.linear1 = nn.Linear(n_inputs, n_outputs)
 
     def forward(self, input_):
@@ -88,6 +89,13 @@ class PERCEPTRON(torch.nn.Module):
 
     def input_shape(self):
         return torch.Size([self.linear1.in_features])
+
+    def internal_loss(self) -> torch.Tensor:
+        loss = torch.tensor(0.)
+        for param in self.parameters():
+            if len(param.shape) > 1:
+                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+        return loss
 
 
 def create_livenet_odd():
