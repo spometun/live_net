@@ -1,5 +1,7 @@
+import types
 from typing import Union, Optional, Any
 import numpy as np
+import torch
 from matplotlib import pyplot as plt
 import scipy
 
@@ -10,14 +12,20 @@ class AccumStat:
         if value is not None:
             self.add_value(value)
 
-    def add_value(self, value: Union[np.ndarray, Any]):
+    def add_value(self, value: Union[np.ndarray, torch.Tensor, Any]):
         if isinstance(value, str):
             return
-        if isinstance(value, list) or isinstance(value, tuple):
+        if isinstance(value, list) or \
+           isinstance(value, tuple) or \
+           isinstance(value, types.GeneratorType):
             for el in value:
                 self.add_value(el)
             return
 
+        try:
+            value = value.detach()
+        except AttributeError:
+            pass
         self._values += list(value.flatten())
 
     def get_abs_max(self) -> float:
@@ -31,6 +39,7 @@ class AccumStat:
     def plot(self, name=None):
         if name is None:
             name = "Values plot3"
+        plt.figure(figsize=(16, 9))
         plt.title(name)
         plt.plot(sorted(self._values))
         plt.grid()
