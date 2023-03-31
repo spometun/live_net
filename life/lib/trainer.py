@@ -1,4 +1,6 @@
 import typing
+
+import numpy as np
 import torch
 import life.lib as lib
 from life.lib.simple_log import LOG
@@ -20,6 +22,8 @@ class Trainer:
         self.adaptive_lr = adaptive_lr
         self.adaptive_lr_increase_step = 1.02
         self.adaptive_lr_decrease_step = 1.1
+        self.adaptive_lr_max_lr = 0.1
+        self.adaptive_lr_min_lr = 0.00001
 
     def step(self, n_steps=1):
         for _ in range(n_steps):
@@ -63,6 +67,7 @@ class Trainer:
             else:
                 new_lr = old_lr / 1.1
                 sign = "--"
+            new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
             # LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
             self.optimizer.learning_rate = new_lr
 
@@ -76,7 +81,9 @@ class Trainer:
         if self.counter != 0:
             epoch_loss_criterion /= self.epoch_size
             epoch_loss_network /= self.epoch_size
-        msg = f"{epoch_loss_criterion + epoch_loss_network:.3f} = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
+        msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
+        if epoch_loss_network != 0.0:
+            msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.5f} gratio={good_ratio:.3f}"
         LOG(msg)
