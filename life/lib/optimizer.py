@@ -21,7 +21,7 @@ class MyOptimizer(torch.optim.Optimizer):
 
 
 class SGD1:
-    def __init__(self, parameter: torch.Tensor, learning_rate=0.001):
+    def __init__(self, parameter: torch.Tensor, learning_rate=0.01):
         self.parameter = parameter
         self.learning_rate = learning_rate
 
