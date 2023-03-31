@@ -27,3 +27,6 @@ importlib.reload(datasets)
 from . import nets
 importlib.reload(nets)
 
+from . import trainer
+importlib.reload(trainer)
+

@@ -1,5 +1,6 @@
 from typing import Optional
 import torch
+from life.lib.simple_log import LOG
 
 
 class MyOptimizer(torch.optim.Optimizer):
@@ -32,3 +33,20 @@ class SGD1:
         with torch.no_grad():
             self.parameter += -self.learning_rate * self.parameter.grad
 
+
+def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs):
+    class _OptimizerWithProperty(opt_class):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @property
+        def learning_rate(self):
+            assert len(self.param_groups) == 1
+            return self.param_groups[0]["lr"]
+
+        @learning_rate.setter
+        def learning_rate(self, value):
+            assert len(self.param_groups) == 1
+            self.param_groups[0]["lr"] = value
+
+    return _OptimizerWithProperty(*args, **kwargs)
