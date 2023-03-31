@@ -1,0 +1,86 @@
+import typing
+import torch
+import life.lib as lib
+from life.lib.simple_log import LOG
+
+
+class Trainer:
+    def __init__(self, network: torch.nn.Module, batch_iterator: typing.Iterator,
+                 criterion: typing.Callable, optimizer, epoch_size=1, adaptive_lr=True):
+        self.network = network
+        self.batch_iterator = batch_iterator
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.epoch_size = epoch_size
+        self.history = []
+        self.counter = 0
+        self.counter_good = 0
+        self.loss_criterion = 0.0
+        self.loss_network = 0.0
+        self.adaptive_lr = adaptive_lr
+        self.adaptive_lr_increase_step = 1.02
+        self.adaptive_lr_decrease_step = 1.1
+
+    def step(self, n_steps=1):
+        for _ in range(n_steps):
+            self._step()
+
+    def _step(self):
+        data, labels = next(self.batch_iterator)
+        pred = self.network.forward(data)
+
+        loss = self.criterion(pred, labels)
+        self.loss_criterion += loss.detach().item()
+        loss_network = self.network.internal_loss()
+        self.loss_network += loss_network.detach().item()
+        all_loss = loss + loss_network
+
+        self.optimizer.zero_grad()
+        all_loss.backward()
+        if self.counter % self.epoch_size == 0:
+            self._on_epoch()
+
+        self.optimizer.step()
+
+        if self.adaptive_lr:
+            self._adjust_lr(data, labels, all_loss)
+
+        self.counter += 1
+
+    def _adjust_lr(self, data, labels, all_loss):
+        with torch.no_grad():
+            pred1 = self.network.forward(data)
+            loss1 = self.criterion(pred1, labels)
+            loss1_network = self.network.internal_loss()
+            all_loss1 = loss1 + loss1_network
+            is_good = all_loss1.detach().item() < all_loss.detach().item()
+            self.counter_good += is_good
+
+            old_lr = self.optimizer.learning_rate
+            if is_good:
+                new_lr = old_lr * 1.02
+                sign = "+ "
+            else:
+                new_lr = old_lr / 1.1
+                sign = "--"
+            # LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
+            self.optimizer.learning_rate = new_lr
+
+    def _on_epoch(self):
+        params = lib.utils.get_parameters_dict(self.network)
+        grads = lib.utils.get_gradients_dict(self.network)
+        self.history.append({"params": params, "grads": grads})
+        epoch_loss_criterion = self.loss_criterion
+        epoch_loss_network = self.loss_network
+        good_ratio = self.counter_good / self.epoch_size
+        if self.counter != 0:
+            epoch_loss_criterion /= self.epoch_size
+            epoch_loss_network /= self.epoch_size
+        msg = f"{epoch_loss_criterion + epoch_loss_network:.3f} = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
+        if self.adaptive_lr:
+            msg += f" lr={self.optimizer.learning_rate:.5f} gratio={good_ratio:.3f}"
+        LOG(msg)
+        self.loss_criterion = 0.0
+        self.loss_network = 0.0
+        self.counter_good = 0
+
