@@ -53,6 +53,9 @@ class ODD(nn.Module):
         y_hat = x
         return y_hat
 
+    def internal_loss(self):
+        return torch.tensor(0.0)
+
 
 class PYRAMID(torch.nn.Module):
     def __init__(self):
