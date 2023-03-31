@@ -131,10 +131,6 @@ class Synapse(GraphNode):
 
     def on_grad_update(self):
         self.optimizer.step()
-        with torch.no_grad():
-            value = self.k.detach().item()
-            sign = math.copysign(1.0, value)
-            self.k += - sign * self.context.decay
 
     def output(self):
         output = self.k * self.source.compute_output()
@@ -193,6 +189,9 @@ class LiveNet(nn.Module):
         y = torch.cat(outputs, dim=1)
         return y
 
+    def internal_loss(self):
+        return torch.tensor(0.0)
+
     def visit(self, func):
         self.root.visit(func)
 
@@ -208,9 +207,8 @@ class LiveNet(nn.Module):
 
 
 class LiveNetOptimizer:
-    def __init__(self, network: LiveNet, decay=0.0):
+    def __init__(self, network: LiveNet):
         self.network = network
-        self.network.context.decay = decay
 
     def zero_grad(self):
         self.network.zero_grad(False)

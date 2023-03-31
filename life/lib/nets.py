@@ -131,7 +131,6 @@ def create_livenet_odd_2():
     return network
 
 
-
 def create_livenet_pyramid():
     network = lib.livenet.LiveNet(3, 2, 1)
     with torch.no_grad():
