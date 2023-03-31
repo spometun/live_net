@@ -1,6 +1,7 @@
 import typing
 from typing import Sequence, Iterable
 import pytest
+import torch
 
 from life.lib.simple_log import LOG
 
@@ -57,13 +58,14 @@ class ZipWithLen:
         return self.a[i], self.b[i]
 
 
-def index_batcher(batch_size, epoch_size):
+def index_batcher(batch_size, epoch_size, provide_smaller_last=True):
     assert batch_size <= epoch_size
     i = 0
     while i + batch_size < epoch_size:
         yield i, i + batch_size
         i += batch_size
-    yield i, epoch_size
+    if provide_smaller_last:
+        yield i, epoch_size
 
 
 def test_index_batcher():
@@ -84,6 +86,12 @@ def test_index_batcher():
     assert values[0] == (0, 3)
     assert values[1] == (3, 6)
 
+    batcher = index_batcher(2, 5, provide_smaller_last=False)
+    values = [el for el in batcher]
+    assert len(values) == 2
+    assert values[0] == (0, 2)
+    assert values[1] == (2, 4)
+
 
 def test_zip_with_len():
     a = ["a", "b", "c", "d", "e"]
@@ -95,4 +103,24 @@ def test_zip_with_len():
     for _ in both:
         n += 1
     assert n == 2 * len(a)
+
+
+class BatchProvider:
+    def __init__(self, x: torch.Tensor, y: torch.Tensor, batch_size=1):
+        assert len(x) == len(y)
+        self.x = x
+        self.y = y
+        self.batch_size = batch_size
+
+    def batch(self):
+        pass
+
+
+def test_batch_provider():
+    s = [1, 2]
+    it = iter(s)
+    LOG(next(it))
+    LOG(next(it))
+    LOG(next(it))
+
 

@@ -1,4 +1,5 @@
 import inspect
+import sys
 import os
 import time
 import re
@@ -7,6 +8,12 @@ import IPython
 
 log_global_time = 0.0
 log_ipython_execution_count = -1
+
+
+def _get_code_info():
+    frame1 = sys._getframe(1)
+    frame2 = sys._getframe(2)
+    return frame1.f_code.co_filename, frame2.f_code.co_filename, frame2.f_lineno
 
 
 def LOG(*args):
@@ -24,10 +31,11 @@ def LOG(*args):
         log_global_time = time.time()
 
     time_ = time.time() - log_global_time
-    root_dir = os.path.dirname(inspect.stack()[0].filename) + "/../.."
-    file = inspect.stack()[1].filename
+    this_filename, caller_filename, caller_lineno = _get_code_info()
+    root_dir = os.path.dirname(this_filename) + "/.."
+    file = caller_filename
     file = os.path.relpath(file, root_dir)
-    line = inspect.stack()[1].lineno
+    line = caller_lineno
     location = f"{file}:{line}"
     is_pycharm_ipython_match = re.search(r"(\.\./)+tmp/ipykernel_\d+/\d+\.py$", file)
     if is_pycharm_ipython_match is not None:
