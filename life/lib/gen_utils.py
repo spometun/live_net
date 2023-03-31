@@ -2,6 +2,7 @@ import typing
 from typing import Sequence, Iterable
 import pytest
 import torch
+import numpy as np
 
 from life.lib.simple_log import LOG
 
@@ -58,13 +59,13 @@ class ZipWithLen:
         return self.a[i], self.b[i]
 
 
-def index_batcher(batch_size, epoch_size, provide_smaller_last=True):
+def index_batcher(batch_size, epoch_size, skip_smaller_last=False):
     assert batch_size <= epoch_size
     i = 0
     while i + batch_size < epoch_size:
         yield i, i + batch_size
         i += batch_size
-    if provide_smaller_last:
+    if not skip_smaller_last or i + batch_size == epoch_size:
         yield i, epoch_size
 
 
@@ -86,11 +87,15 @@ def test_index_batcher():
     assert values[0] == (0, 3)
     assert values[1] == (3, 6)
 
-    batcher = index_batcher(2, 5, provide_smaller_last=False)
+    batcher = index_batcher(2, 5, skip_smaller_last=True)
     values = [el for el in batcher]
     assert len(values) == 2
     assert values[0] == (0, 2)
     assert values[1] == (2, 4)
+
+    batcher = index_batcher(2, 6, skip_smaller_last=True)
+    values = [el for el in batcher]
+    assert len(values) == 3
 
 
 def test_zip_with_len():
@@ -105,22 +110,33 @@ def test_zip_with_len():
     assert n == 2 * len(a)
 
 
-class BatchProvider:
-    def __init__(self, x: torch.Tensor, y: torch.Tensor, batch_size=1):
-        assert len(x) == len(y)
-        self.x = x
-        self.y = y
-        self.batch_size = batch_size
+def batch_iterator(x: torch.Tensor, y: torch.Tensor, batch_size=1, skip_smaller_last=True, seed=0):
+    assert len(x) == len(y)
+    epoch_size = len(x)
+    rnd = None
+    x = x.clone()
+    y = y.clone()
+    while True:
+        for start, end in index_batcher(batch_size, epoch_size, skip_smaller_last):
+            yield x[start:end], y[start:end]
+        if rnd is None:
+            rnd = np.random.default_rng(seed=seed)
+        permutation = rnd.permutation(epoch_size)
+        x = x[permutation]
+        y = y[permutation]
 
-    def batch(self):
-        pass
+
+def test_batch_iterator():
+    x = torch.tensor([1, 2, 3, 4, 5, 6])
+    y = torch.tensor([1, 0, 1, 0, 1, 0])
+    it = batch_iterator(x, y, 2)
+    for i in range(10):
+        val = next(it)
+        assert len(val) == 2
+        assert (val[0][0] % 2 == val[1][0])
+        assert (val[0][1] % 2 == val[1][1])
 
 
-def test_batch_provider():
-    s = [1, 2]
-    it = iter(s)
-    LOG(next(it))
-    LOG(next(it))
-    LOG(next(it))
+
 
 
