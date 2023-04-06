@@ -2,6 +2,7 @@ import math
 
 import torch
 from torch import nn as nn
+from life.lib.simple_log import LOG
 
 from life import lib as lib
 
