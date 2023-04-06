@@ -3,6 +3,7 @@ import torch
 from life.lib.simple_log import LOG
 from life.lib.livenet import LiveNet
 import life.lib.livenet
+import math
 
 
 class MyOptimizer(torch.optim.Optimizer):
@@ -22,7 +23,7 @@ class MyOptimizer(torch.optim.Optimizer):
             p.data.add_(p.grad.data, alpha=-self._lr)
 
 
-class SGD1:
+class SGDLiveNet:
     def __init__(self, parameter: torch.Tensor, context: life.lib.livenet.Context):
         self.parameter = parameter
         self.context = context
@@ -35,6 +36,43 @@ class SGD1:
         lr = self.context.learning_rate
         with torch.no_grad():
             self.parameter += -lr * self.parameter.grad
+
+
+class AdamLiveNet:
+    def __init__(self, parameter: torch.Tensor, context: life.lib.livenet.Context,
+                 betas: tuple, epsilon=1e-8):
+        self.parameter = parameter
+        self.context = context
+        self.t = 0
+        self.b1t = 1.
+        self.b2t = 1.
+        self.epsilon = epsilon
+        self.mt = torch.zeros_like(self.parameter)
+        self.vt = torch.zeros_like(self.parameter)
+        assert len(betas) == 2
+        assert 0 <= betas[0] <= 1
+        assert 0 <= betas[1] <= 1
+        self.b1 = betas[0]
+        self.b2 = betas[1]
+
+    def zero_grad(self):
+        with torch.no_grad():
+            self.parameter.grad.zero_()
+
+    def step(self):
+        with torch.no_grad():
+            lr = self.context.learning_rate
+            self.t += 1
+            self.b1t *= self.b1
+            self.b2t *= self.b2
+            g = self.parameter.grad
+            assert math.isfinite(g)
+            self.mt = self.b1 * self.mt + (1 - self.b1) * g
+            self.vt = self.b2 * self.vt + (1 - self.b2) * (g * g)
+            mt = self.mt / (1 - self.b1t)
+            vt = self.vt / (1 - self.b2t)
+            self.parameter += -lr * mt / (torch.sqrt(vt) + self.epsilon)
+            assert math.isfinite(self.parameter.item())
 
 
 def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs):
@@ -56,8 +94,9 @@ def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs
 
 
 class LiveNetOptimizer:
-    def __init__(self, network: LiveNet):
+    def __init__(self, network: LiveNet, lr):
         self.network = network
+        self.network.context.learning_rate = lr
 
     def zero_grad(self):
         self.network.zero_grad(False)
