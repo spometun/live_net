@@ -60,7 +60,7 @@ class DestinationNeuron(Neuron):
         super().__init__(context)
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter("n")
-        self.optimizer = optimizer.SGD1(self.b)
+        self.optimizer = optimizer.SGD1(self.b, context)
         self.activation = activation
 
     def on_grad_update(self):
@@ -122,7 +122,7 @@ class Synapse(GraphNode):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         source.axons.append(self)
         self.k = source.context.obtain_float_parameter("s")
-        self.optimizer = optimizer.SGD1(self.k)
+        self.optimizer = optimizer.SGD1(self.k, self.context)
 
     def init_weight(self):
         v = math.sqrt(1 / len(self.destination.dendrites))
@@ -147,6 +147,7 @@ class Context:
         self.n_params = 0
         self.name_counters = {}
         self.decay = 0.0
+        self.learning_rate = 0.01
         self.reduce_sum_computation = False
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
@@ -204,17 +205,6 @@ class LiveNet(nn.Module):
 
     def input_shape(self):
         return torch.Size([len(self.inputs)])
-
-
-class LiveNetOptimizer:
-    def __init__(self, network: LiveNet):
-        self.network = network
-
-    def zero_grad(self):
-        self.network.zero_grad(False)
-
-    def step(self):
-        self.network.on_grad_update()
 
 
 def export_onnx(model: nn.Module):
