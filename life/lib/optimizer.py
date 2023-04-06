@@ -1,6 +1,8 @@
 from typing import Optional
 import torch
 from life.lib.simple_log import LOG
+from life.lib.livenet import LiveNet
+import life.lib.livenet
 
 
 class MyOptimizer(torch.optim.Optimizer):
@@ -21,17 +23,18 @@ class MyOptimizer(torch.optim.Optimizer):
 
 
 class SGD1:
-    def __init__(self, parameter: torch.Tensor, learning_rate=0.01):
+    def __init__(self, parameter: torch.Tensor, context: life.lib.livenet.Context):
         self.parameter = parameter
-        self.learning_rate = learning_rate
+        self.context = context
 
     def zero_grad(self):
         with torch.no_grad():
             self.parameter.grad.zero_()
 
     def step(self):
+        lr = self.context.learning_rate
         with torch.no_grad():
-            self.parameter += -self.learning_rate * self.parameter.grad
+            self.parameter += -lr * self.parameter.grad
 
 
 def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs):
@@ -50,3 +53,23 @@ def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs
             self.param_groups[0]["lr"] = value
 
     return _OptimizerWithProperty(*args, **kwargs)
+
+
+class LiveNetOptimizer:
+    def __init__(self, network: LiveNet):
+        self.network = network
+
+    def zero_grad(self):
+        self.network.zero_grad(False)
+
+    def step(self):
+        self.network.on_grad_update()
+
+    @property
+    def learning_rate(self):
+        return self.network.context.learning_rate
+
+    @learning_rate.setter
+    def learning_rate(self, value):
+        self.network.context.learning_rate = value
+
