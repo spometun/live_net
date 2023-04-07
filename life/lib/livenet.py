@@ -11,6 +11,7 @@ import math
 import random
 from life.lib.graph import GraphNode, NodesHolder
 import life.lib.utils as utils
+from life.lib.utils import ValueHolder
 
 
 from life.lib.simple_log import LOG
@@ -51,7 +52,7 @@ class SourceNeuron(Neuron):
         return synapse
 
     @override
-    def get_adjacent_nodes(self) -> List[GraphNode]:
+    def get_adjacent_nodes(self) -> List["GraphNode"]:
         return []
 
 
@@ -90,7 +91,7 @@ class DestinationNeuron(Neuron):
         return synapse
 
     @override
-    def get_adjacent_nodes(self) -> List[GraphNode]:
+    def get_adjacent_nodes(self) -> List["GraphNode"]:
         return self.dendrites
 
 
@@ -136,6 +137,9 @@ class Synapse(GraphNode):
         output = self.k * self.source.compute_output()
         return output
 
+    def internal_loss(self, loss: ValueHolder):
+        loss.value += self.context.alpha_l1 * torch.abs(self.k)
+
     def get_adjacent_nodes(self) -> List[GraphNode]:
         return [self.source]
 
@@ -146,10 +150,10 @@ class Context:
         self.module = module
         self.n_params = 0
         self.name_counters = {}
-        self.decay = 0.0
         self.learning_rate = None
         self.optimizer_class = optimizer.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
+        self.alpha_l1 = 0.0
         self.reduce_sum_computation = False
 
     def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
@@ -193,7 +197,9 @@ class LiveNet(nn.Module):
         return y
 
     def internal_loss(self):
-        return torch.tensor(0.0)
+        loss = ValueHolder(torch.tensor(0.0))
+        self.root.visit("internal_loss", loss)
+        return loss.value
 
     def visit(self, func):
         self.root.visit(func)

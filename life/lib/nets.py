@@ -107,8 +107,9 @@ class PERCEPTRON(torch.nn.Module):
         return loss
 
 
-def create_livenet_odd():
+def create_livenet_odd(l1=0.0):
     network = lib.livenet.LiveNet(1, 2, 1)
+    network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(10)
         network.inputs[0].axons[1].k[...] = torch.tensor(-10)
