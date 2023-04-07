@@ -10,25 +10,26 @@ class GraphNode:
     @abc.abstractmethod
     def get_adjacent_nodes(self) -> List["GraphNode"]: ...
 
-    def visit(self, function_name: str):
+    def visit(self, function_name: str, *args):
         visited_ids = set()
         visited_nodes = list()  # make sure that nodes (potentially) removed during visit are still referenced,
         # which guarantees unique ids with (potentially) created other nodes during visit
-        self._visit(function_name, visited_ids=visited_ids, visited_nodes=visited_nodes)
+        self._visit(function_name, args, visited_ids=visited_ids, visited_nodes=visited_nodes)
         del visited_ids
         del visited_nodes
 
-    def _visit(self, function_name: str, visited_ids: set, visited_nodes: set):
+    def _visit(self, function_name: str, args: tuple, visited_ids: set, visited_nodes: set):
         if id(self) in visited_ids:
             return
+        args_str = ", ".join( (f"args[{i}]" for i in range(len(args))) )
         try:
-            exec(f"self.{function_name}()")
+            exec(f"self.{function_name}({args_str})")
         except AttributeError:
             pass
         visited_ids.add(id(self))
         visited_nodes.append(self)
         for node in self.get_adjacent_nodes():
-            node._visit(function_name, visited_ids=visited_ids, visited_nodes=visited_nodes)
+            node._visit(function_name, args, visited_ids=visited_ids, visited_nodes=visited_nodes)
 
 
 class NodesHolder(GraphNode):
@@ -55,6 +56,9 @@ def test_graph():
         def func():
             GL._call_counter += 1
 
+        def summator(self, v):
+            v[0] += self.num
+
         def get_adjacent_nodes(self) -> List["GraphNode"]:
             return self.nodes
 
@@ -67,3 +71,7 @@ def test_graph():
     assert GL._call_counter == 5
     n5.visit("func")
     assert GL._call_counter == 10
+
+    v = [0]
+    n5.visit("summator", v)
+    assert v[0] == 15

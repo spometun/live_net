@@ -2,7 +2,6 @@ from typing import Optional
 import torch
 from life.lib.simple_log import LOG
 from life.lib.livenet import LiveNet
-import life.lib.livenet
 import math
 
 
@@ -24,7 +23,7 @@ class MyOptimizer(torch.optim.Optimizer):
 
 
 class SGDLiveNet:
-    def __init__(self, parameter: torch.Tensor, context: life.lib.livenet.Context):
+    def __init__(self, parameter: torch.Tensor, context):
         self.parameter = parameter
         self.context = context
 
@@ -39,7 +38,7 @@ class SGDLiveNet:
 
 
 class AdamLiveNet:
-    def __init__(self, parameter: torch.Tensor, context: life.lib.livenet.Context,
+    def __init__(self, parameter: torch.Tensor, context,
                  betas: tuple, epsilon=1e-8):
         self.parameter = parameter
         self.context = context

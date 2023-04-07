@@ -13,6 +13,11 @@ def set_seed(seed=0):
     torch.manual_seed(seed)
 
 
+class ValueHolder:
+    def __init__(self, value=None):
+        self.value = value
+
+
 def calc_batch_times(network: torch.nn.Module,
                      criterion: Callable[[Tensor, Tensor], Tensor],
                      max_batch_size=4096):
