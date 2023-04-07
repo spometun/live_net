@@ -34,11 +34,12 @@ class XOR(nn.Module):
 
 
 class ODD(nn.Module):
-    def __init__(self):
+    def __init__(self, l1=0.0):
         super(ODD, self).__init__()
         self.linear1 = nn.Linear(1, 2)
         self.relu = nn.ReLU()
         self.linear2 = nn.Linear(2, 1)
+        self.alpha_l1 = l1
         with torch.no_grad():
             p = [p for p in self.linear1.parameters()]
             p[0][...] = torch.tensor([[10], [-10]])
@@ -54,8 +55,12 @@ class ODD(nn.Module):
         y_hat = x
         return y_hat
 
-    def internal_loss(self):
-        return torch.tensor(0.0)
+    def internal_loss(self) -> torch.Tensor:
+        loss = torch.tensor(0.)
+        for param in self.parameters():
+            if len(param.shape) > 1:
+                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+        return loss
 
 
 class PYRAMID(torch.nn.Module):
