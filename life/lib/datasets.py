@@ -27,6 +27,14 @@ def get_pyramid():
     return x, y
 
 
+def get_linear3():
+    x = torch.tensor([[1, 0, 0.8],
+                      [0, 1, 0.1]
+                      ])
+    y = torch.tensor([[0], [1]])
+    return x, y
+
+
 def _get_mnist(train: bool):
     transform = torchvision.transforms.Compose(
         [torchvision.transforms.ToTensor()
