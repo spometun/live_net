@@ -113,6 +113,19 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         super().__init__(context, activation)
 
 
+class LivenessObserver:
+    def __init__(self):
+        self.dead = False
+        self.value = 1.0
+        self.weight = 0.05
+
+    def put(self, x: float):
+        self.value = (1 - self.weight) * self.value + self.weight * x
+
+    def looks_ok(self):
+        return self.value >= 0.05
+
+
 class Synapse(GraphNode):
     def __init__(self, source: SourceNeuron, destination: Union[DestinationNeuron, RegularNeuron]):
         assert source != destination
@@ -123,9 +136,11 @@ class Synapse(GraphNode):
         destination.dendrites.append(self)
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         source.axons.append(self)
-        self.k = self.context.obtain_float_parameter(f"{source.id}->{destination.id}")
+        self.name = f"{source.id}->{destination.id}"
+        self.k = self.context.obtain_float_parameter(self.name)
         self.random_constant = self.context.random.uniform(-1, 1)
         self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
+        self.liveness_observer = LivenessObserver()
 
     def init_weight(self):
         v = math.sqrt(1 / len(self.destination.dendrites))
@@ -134,6 +149,11 @@ class Synapse(GraphNode):
 
     def on_grad_update(self):
         self.optimizer.step()
+        self.liveness_observer.put(self.k.item())
+        if not self.liveness_observer.looks_ok():
+            if not self.liveness_observer.dead:
+                LOG(f"{self.name} died")
+            self.liveness_observer.dead = True
 
     def output(self):
         output = self.k * self.source.compute_output()
