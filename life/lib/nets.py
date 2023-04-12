@@ -157,6 +157,18 @@ def create_livenet_pyramid():
     return network
 
 
+def create_livenet_linear2(l1=0.0):
+    network = lib.livenet.LiveNet(2, None, 2)
+    network.context.alpha_l1 = l1
+    with torch.no_grad():
+        network.inputs[0].axons[0].k[...] = torch.tensor(0.)
+        network.inputs[0].axons[1].k[...] = torch.tensor(0.)
+
+        network.inputs[1].axons[0].k[...] = torch.tensor(0.)
+        network.inputs[1].axons[1].k[...] = torch.tensor(0.)
+    return network
+
+
 def create_livenet_linear3(l1=0.0):
     network = lib.livenet.LiveNet(3, None, 2)
     network.context.alpha_l1 = l1
@@ -194,3 +206,16 @@ class LINEAR3(nn.Module):
             if len(param.shape) > 1:
                 loss += self.alpha_l1 * torch.sum(torch.abs(param))
         return loss
+
+
+def create_optimizer(net: torch.nn.Module):
+    if net.__class__.__name__ == "LiveNet":
+        print("LiveNet")
+        net: lib.livenet.LiveNet
+        optimizer = lib.optimizer.LiveNetOptimizer(net, lr=0.01)
+        # optimizer = torch.optim.Adam(net.parameters())
+    else:
+        print("Torch")
+        # optimizer = lib.optimizer.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
+        optimizer = lib.optimizer.optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
+    return optimizer

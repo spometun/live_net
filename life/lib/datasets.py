@@ -27,6 +27,14 @@ def get_pyramid():
     return x, y
 
 
+def get_linear2():
+    x = torch.tensor([[1., 0],
+                      [0, 1]
+                      ])
+    y = torch.tensor([[0], [1]])
+    return x, y
+
+
 def get_linear3():
     x = torch.tensor([[1, 0, 1],
                       [0, 1, 0.]
