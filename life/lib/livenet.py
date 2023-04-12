@@ -26,6 +26,7 @@ class Neuron(GraphNode):
     def __init__(self, context: "Context"):
         super().__init__()
         self.context = context
+        self.id = context.get_id()
         self._output = None
 
     @typing.final
@@ -60,7 +61,7 @@ class DestinationNeuron(Neuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context)
         self.dendrites: List[Synapse] = []
-        self.b = context.obtain_float_parameter("n")
+        self.b = context.obtain_float_parameter(f"{self.id}")
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
         self.activation = activation
 
@@ -122,7 +123,7 @@ class Synapse(GraphNode):
         destination.dendrites.append(self)
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         source.axons.append(self)
-        self.k = source.context.obtain_float_parameter("s")
+        self.k = self.context.obtain_float_parameter(f"{source.id}->{destination.id}")
         self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
 
     def init_weight(self):
@@ -149,19 +150,19 @@ class Context:
         self.random = random.Random(seed)
         self.module = module
         self.n_params = 0
-        self.name_counters = {}
         self.learning_rate = None
         self.optimizer_class = optimizer.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
+        self.id_counter = 0
         self.reduce_sum_computation = False
 
-    def obtain_float_parameter(self, name_prefix: str) -> nn.Parameter:
-        if name_prefix not in self.name_counters:
-            self.name_counters[name_prefix] = -1
-        self.name_counters[name_prefix] += 1
-        name = f"{name_prefix}{self.name_counters[name_prefix]}"
-        self.n_params += 1
+    def get_id(self):
+        id_ = self.id_counter
+        self.id_counter += 1
+        return id_
+
+    def obtain_float_parameter(self, name: str) -> nn.Parameter:
         param = nn.Parameter(torch.tensor(0.0))
         self.module.register_parameter(name, param)
         return param
@@ -189,6 +190,7 @@ class LiveNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
+        assert len(self.inputs) == x.shape[1]
         self.root.visit("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i: i + 1])

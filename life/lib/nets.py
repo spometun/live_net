@@ -121,8 +121,9 @@ def create_livenet_odd(l1=0.0):
     return network
 
 
-def create_livenet_odd_2():
+def create_livenet_odd_2(l1=0.0):
     network = lib.livenet.LiveNet(1, 2, 2)
+    network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
         network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)
@@ -154,3 +155,42 @@ def create_livenet_pyramid():
         network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(1)
         network.inputs[0].axons[1].destination.axons[0].destination.b[...] = torch.tensor(0)
     return network
+
+
+def create_livenet_linear3(l1=0.0):
+    network = lib.livenet.LiveNet(3, None, 2)
+    network.context.alpha_l1 = l1
+    with torch.no_grad():
+        network.inputs[0].axons[0].k[...] = torch.tensor(0.)
+        network.inputs[0].axons[1].k[...] = torch.tensor(0.)
+
+        network.inputs[1].axons[0].k[...] = torch.tensor(0.)
+        network.inputs[1].axons[1].k[...] = torch.tensor(0.)
+
+        network.inputs[2].axons[0].k[...] = torch.tensor(0.)
+        network.inputs[2].axons[1].k[...] = torch.tensor(0.)
+    return network
+
+
+class LINEAR3(nn.Module):
+    def __init__(self, l1=0.0):
+        super(LINEAR3, self).__init__()
+        self.linear1 = nn.Linear(3, 2)
+        self.alpha_l1 = l1
+        with torch.no_grad():
+            p = [p for p in self.linear1.parameters()]
+            p[0][...] = torch.tensor([[0., 0, 0],
+                                      [0, 0, 0]])
+            p[1][...] = torch.tensor([0., 0])
+
+    def forward(self, input_):
+        x = self.linear1(input_)
+        y_hat = x
+        return y_hat
+
+    def internal_loss(self) -> torch.Tensor:
+        loss = torch.tensor(0.)
+        for param in self.parameters():
+            if len(param.shape) > 1:
+                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+        return loss
