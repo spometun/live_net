@@ -116,8 +116,9 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
 class LivenessObserver:
     def __init__(self):
         self.dead = False
-        self.value = 1.0
+        self.threshold = 0.05;
         self.weight = 0.05
+        self.value = math.pow(1 - self.weight, -100)
 
     def put(self, x: float):
         self.value = (1 - self.weight) * self.value + self.weight * x
