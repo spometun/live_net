@@ -28,8 +28,8 @@ def get_pyramid():
 
 
 def get_linear3():
-    x = torch.tensor([[1, 0, 0.8],
-                      [0, 1, 0.1]
+    x = torch.tensor([[1, 0, 1],
+                      [0, 1, 0.]
                       ])
     y = torch.tensor([[0], [1]])
     return x, y

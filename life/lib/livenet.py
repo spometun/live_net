@@ -124,6 +124,7 @@ class Synapse(GraphNode):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         source.axons.append(self)
         self.k = self.context.obtain_float_parameter(f"{source.id}->{destination.id}")
+        self.random_constant = self.context.random.uniform(-1, 1)
         self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
 
     def init_weight(self):
@@ -139,7 +140,8 @@ class Synapse(GraphNode):
         return output
 
     def internal_loss(self, loss: ValueHolder):
-        loss.value += self.context.alpha_l1 * torch.abs(self.k)
+        alpha_l1 = self.context.alpha_l1 * (1 + 0.1 * self.random_constant)
+        loss.value += alpha_l1 * torch.abs(self.k)
 
     def get_adjacent_nodes(self) -> List[GraphNode]:
         return [self.source]
