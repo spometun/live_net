@@ -94,4 +94,17 @@ def add_noise_to_params(params: list, a, b):
                     params[i][*index] = val
 
 
+def broadcast_dimensions(tensors: list[torch.Tensor], target_shape: tuple = None):
+    if target_shape is None:
+        for tensor in tensors:
+            if len(tensor.shape) > 0:
+                target_shape = tensor.shape
+                break
+    if target_shape is None:
+        return
 
+    for i, tensor in enumerate(tensors):
+        if tensor.shape == target_shape:
+            continue
+        assert len(tensor.shape) == 0
+        tensors[i] = tensor.repeat(*target_shape)

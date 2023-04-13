@@ -1,14 +1,13 @@
 import typing
-from typing import List, Self, Union
+from typing import List, Union
 from overrides import override
-import numpy as np
-import pytest
 import abc
 import torch
 import torch.nn as nn
-import pickle
 import math
 import random
+
+from life.lib.death import LivenessObserver, DeathStat
 from life.lib.graph import GraphNode, NodesHolder
 import life.lib.utils as utils
 from life.lib.utils import ValueHolder
@@ -48,7 +47,21 @@ class SourceNeuron(Neuron):
         super().__init__(context)
         self.axons: List[Synapse] = []
 
-    def connect_to(self, destination: "DestinationNeuron"):
+    def add_axon(self, synapse: "Synapse"):
+        assert synapse not in self.axons, "Internal error"
+        self.axons.append(synapse)
+
+    def remove_axon(self, synapse: "Synapse"):
+        assert synapse in self.axons, "Internal error"
+        self.axons.remove(synapse)
+        if len(self.axons) == 0:
+            LOG(f"{type(self).__name__} {self.id} became useless")
+            if isinstance(self, DestinationNeuron):
+                LOG(f"initiating chain death")
+                while len(self.dendrites) > 0:
+                    self.dendrites[0].die()
+
+    def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
         synapse = Synapse(self, destination)
         return synapse
 
@@ -76,7 +89,7 @@ class DestinationNeuron(Neuron):
                 outputs = []
                 for synapse in self.dendrites:
                     outputs.append(synapse.output())
-                all_ = torch.cat(outputs, 1)
+                all_ = torch.cat(outputs, dim=1)
                 output = torch.sum(all_, dim=1, keepdim=True) + self.b
             else:
                 output = self.dendrites[0].output()
@@ -87,7 +100,17 @@ class DestinationNeuron(Neuron):
             output = self.activation(output)
         return output
 
-    def connect_from(self, source: SourceNeuron):
+    def add_dendrite(self, synapse: "Synapse"):
+        assert synapse not in self.dendrites, "Internal error"
+        self.dendrites.append(synapse)
+
+    def remove_dendrite(self, synapse: "Synapse"):
+        assert synapse in self.dendrites, "Internal error"
+        self.dendrites.remove(synapse)
+        if len(self.dendrites) == 0:
+            self.context.death_stat.on_dangle_neuron(self)
+
+    def connect_from(self, source: SourceNeuron):  # high-level helper function
         synapse = Synapse(source, self)
         return synapse
 
@@ -113,35 +136,21 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         super().__init__(context, activation)
 
 
-class LivenessObserver:
-    def __init__(self):
-        self.dead = False
-        self.threshold = 0.05;
-        self.weight = 0.05
-        self.value = math.pow(1 - self.weight, -100)
-
-    def put(self, x: float):
-        self.value = (1 - self.weight) * self.value + self.weight * x
-
-    def looks_ok(self):
-        return self.value >= 0.05
-
-
 class Synapse(GraphNode):
     def __init__(self, source: SourceNeuron, destination: Union[DestinationNeuron, RegularNeuron]):
         assert source != destination
+        assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
+        assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         self.source = source
         self.destination = destination
         self.context = source.context
-        assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
-        destination.dendrites.append(self)
-        assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
-        source.axons.append(self)
         self.name = f"{source.id}->{destination.id}"
         self.k = self.context.obtain_float_parameter(self.name)
         self.random_constant = self.context.random.uniform(-1, 1)
         self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
         self.liveness_observer = LivenessObserver()
+        source.add_axon(self)
+        destination.add_dendrite(self)
 
     def init_weight(self):
         v = math.sqrt(1 / len(self.destination.dendrites))
@@ -152,9 +161,12 @@ class Synapse(GraphNode):
         self.optimizer.step()
         self.liveness_observer.put(self.k.item())
         if not self.liveness_observer.looks_ok():
-            if not self.liveness_observer.dead:
-                LOG(f"{self.name} died")
-            self.liveness_observer.dead = True
+            self.die()
+
+    def die(self):
+        LOG(f"{self.name} died")
+        self.destination.remove_dendrite(self)
+        self.source.remove_axon(self)
 
     def output(self):
         output = self.k * self.source.compute_output()
@@ -178,7 +190,8 @@ class Context:
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
         self.id_counter = 0
-        self.reduce_sum_computation = False
+        self.death_stat = DeathStat()
+        self.reduce_sum_computation = True
 
     def get_id(self):
         id_ = self.id_counter
@@ -218,6 +231,7 @@ class LiveNet(nn.Module):
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i: i + 1])
         outputs = [o.compute_output() for o in self.outputs]
+        utils.broadcast_dimensions(outputs, (len(x), 1))
         y = torch.cat(outputs, dim=1)
         return y
 

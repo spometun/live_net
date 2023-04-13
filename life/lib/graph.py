@@ -10,15 +10,19 @@ class GraphNode:
     @abc.abstractmethod
     def get_adjacent_nodes(self) -> List["GraphNode"]: ...
 
+    # visited function must comply one of the following:
+    # A. Do not modify graph structure
+    # or
+    # B. Visited function may disconnect visited node (and may disconnect some or all of its children)
+    # siblings of visited node must be intact
+    # or
+    # C. ... about creation ?
     def visit(self, function_name: str, *args):
         visited_ids = set()
-        visited_nodes = list()  # make sure that nodes (potentially) removed during visit are still referenced,
-        # which guarantees unique ids with (potentially) created other nodes during visit
-        self._visit(function_name, args, visited_ids=visited_ids, visited_nodes=visited_nodes)
+        self._visit(function_name, args, visited_ids=visited_ids)
         del visited_ids
-        del visited_nodes
 
-    def _visit(self, function_name: str, args: tuple, visited_ids: set, visited_nodes: set):
+    def _visit(self, function_name: str, args: tuple, visited_ids: set):
         if id(self) in visited_ids:
             return
         args_str = ", ".join( (f"args[{i}]" for i in range(len(args))) )
@@ -27,9 +31,10 @@ class GraphNode:
         except AttributeError:
             pass
         visited_ids.add(id(self))
-        visited_nodes.append(self)
-        for node in self.get_adjacent_nodes():
-            node._visit(function_name, args, visited_ids=visited_ids, visited_nodes=visited_nodes)
+        # make a copy because some visited nodes (but not siblings!) may be disconnected during the visit
+        adjacent_nodes = self.get_adjacent_nodes()[:]
+        for node in adjacent_nodes:
+            node._visit(function_name, args, visited_ids=visited_ids)
 
 
 class NodesHolder(GraphNode):
