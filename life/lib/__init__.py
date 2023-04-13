@@ -21,6 +21,9 @@ importlib.reload(visual_utils)
 from . import utils
 importlib.reload(utils)
 
+from . import death
+importlib.reload(death)
+
 from . import livenet
 importlib.reload(livenet)
 
@@ -32,4 +35,5 @@ importlib.reload(nets)
 
 from . import trainer
 importlib.reload(trainer)
+
 
