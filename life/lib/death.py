@@ -24,4 +24,9 @@ class DeathStat:
 
     def on_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons += 1
-        LOG(f"{type(dangle).__name__} {dangle.id} became dangle")
+        LOG(f"{dangle.name} became dangle, total dangle = {self.dangle_neurons}")
+
+    def off_dangle_neuron(self, dangle: "DestinationNeuron"):
+        self.dangle_neurons -= 1
+        LOG(f"dangle {dangle.name} died, total dangle = {self.dangle_neurons}")
+        assert self.dangle_neurons >= 0, "Internal error"
