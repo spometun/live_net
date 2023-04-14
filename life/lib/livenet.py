@@ -82,20 +82,23 @@ class DestinationNeuron(Neuron):
         self.optimizer.step()
 
     def _compute_output(self) -> torch.Tensor:
-        if len(self.dendrites) == 0:
-            output = self.b
+        outputs = [self.b]
+        if self.context.reduce_sum_computation:
+            for synapse in self.dendrites:
+                outputs.append(synapse.output())
+            utils.broadcast_dimensions(outputs)
+            ndim = len(outputs[0].shape)
+            if ndim == 0:
+                outputs = [o.reshape(1, 1) for o in outputs]
+            assert len(outputs[0].shape) == 2, "Internal error"
+            all_ = torch.cat(outputs, dim=1)
+            output = torch.sum(all_, dim=1, keepdim=True)
+            if ndim == 0:
+                output = output.reshape([])
         else:
-            if self.context.reduce_sum_computation:
-                outputs = []
-                for synapse in self.dendrites:
-                    outputs.append(synapse.output())
-                all_ = torch.cat(outputs, dim=1)
-                output = torch.sum(all_, dim=1, keepdim=True) + self.b
-            else:
-                output = self.dendrites[0].output()
-                for synapse in self.dendrites[1:]:
-                    output = output + synapse.output()
-                output = output + self.b
+            output = self.b
+            for synapse in self.dendrites[1:]:
+                output = output + synapse.output()
         if self.activation is not None:
             output = self.activation(output)
         return output
@@ -116,6 +119,7 @@ class DestinationNeuron(Neuron):
 
     @override()
     def die(self):
+        LOG(f"remove name {self.name}")
         self.context.remove_parameter(self.name)
 
     @override
@@ -143,12 +147,13 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
         if len(self.dendrites) == 0:
-            self.context.death_stat.off_dangle_neuron()
+            self.context.death_stat.off_dangle_neuron(self)
         else:
             LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
             while len(self.dendrites) > 0:
                 self.dendrites[0].die()
-        super(DestinationNeuron).die()
+        assert issubclass(RegularNeuron, DestinationNeuron)
+        super(RegularNeuron, self).die()
 
 
 class Synapse(GraphNode):

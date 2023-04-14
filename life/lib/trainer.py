@@ -82,8 +82,8 @@ class Trainer:
             epoch_loss_criterion /= self.epoch_size
             epoch_loss_network /= self.epoch_size
         msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
-        if epoch_loss_network != 0.0:
-            msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
+        # if epoch_loss_network != 0.0:
+        msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.5f} gratio={good_ratio:.3f}"
         LOG(msg)
