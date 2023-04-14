@@ -7,7 +7,7 @@ from life.lib.simple_log import LOG
 class LivenessObserver:
     def __init__(self):
         self.dead = False
-        self.threshold = 0.05
+        self.threshold = 0.01
         self.weight = 0.05
         self.value = math.pow(1 - self.weight, -100)
 
