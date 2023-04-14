@@ -25,7 +25,7 @@ class Neuron(GraphNode):
     def __init__(self, context: "Context"):
         super().__init__()
         self.context = context
-        self.id = context.get_id()
+        self.name = context.get_name(type(self))
         self._output = None
 
     @typing.final
@@ -39,6 +39,9 @@ class Neuron(GraphNode):
 
     @abc.abstractmethod
     def _compute_output(self) -> torch.Tensor: ...
+
+    def die(self):
+        LOG(f"There is no death for {self.name}")
 
 
 # noinspection PyAbstractClass
@@ -55,11 +58,8 @@ class SourceNeuron(Neuron):
         assert synapse in self.axons, "Internal error"
         self.axons.remove(synapse)
         if len(self.axons) == 0:
-            LOG(f"{type(self).__name__} {self.id} became useless")
-            if isinstance(self, DestinationNeuron):
-                LOG(f"initiating chain death")
-                while len(self.dendrites) > 0:
-                    self.dendrites[0].die()
+            LOG(f"{self.name} became useless")
+            self.die()
 
     def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
         synapse = Synapse(self, destination)
@@ -74,7 +74,7 @@ class DestinationNeuron(Neuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context)
         self.dendrites: List[Synapse] = []
-        self.b = context.obtain_float_parameter(f"{self.id}")
+        self.b = context.obtain_float_parameter(self.name)
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
         self.activation = activation
 
@@ -114,6 +114,10 @@ class DestinationNeuron(Neuron):
         synapse = Synapse(source, self)
         return synapse
 
+    @override()
+    def die(self):
+        self.context.remove_parameter(self.name)
+
     @override
     def get_adjacent_nodes(self) -> List["GraphNode"]:
         return self.dendrites
@@ -135,6 +139,17 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context, activation)
 
+    @override
+    def die(self):
+        assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
+        if len(self.dendrites) == 0:
+            self.context.death_stat.off_dangle_neuron()
+        else:
+            LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
+            while len(self.dendrites) > 0:
+                self.dendrites[0].die()
+        super(DestinationNeuron).die()
+
 
 class Synapse(GraphNode):
     def __init__(self, source: SourceNeuron, destination: Union[DestinationNeuron, RegularNeuron]):
@@ -144,7 +159,7 @@ class Synapse(GraphNode):
         self.source = source
         self.destination = destination
         self.context = source.context
-        self.name = f"{source.id}->{destination.id}"
+        self.name = f"{source.name}->{destination.name}"
         self.k = self.context.obtain_float_parameter(self.name)
         self.random_constant = self.context.random.uniform(-1, 1)
         self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
@@ -167,6 +182,7 @@ class Synapse(GraphNode):
         LOG(f"{self.name} died")
         self.destination.remove_dendrite(self)
         self.source.remove_axon(self)
+        self.context.remove_parameter(self.name)
 
     def output(self):
         output = self.k * self.source.compute_output()
@@ -189,19 +205,31 @@ class Context:
         self.optimizer_class = optimizer.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
-        self.id_counter = 0
+        self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
         self.reduce_sum_computation = True
 
-    def get_id(self):
-        id_ = self.id_counter
-        self.id_counter += 1
-        return id_
+    def get_name(self, cls):
+        match cls.__name__:
+            case "RegularNeuron":
+               key = "N"
+            case "DataNeuron":
+                key = "S"
+            case "DestinationNeuron":
+                key = "D"
+            case _:
+                assert False, "Internal error"
+        res = f"{key}{self.name_counters[key]}"
+        self.name_counters[key] += 1
+        return res
 
     def obtain_float_parameter(self, name: str) -> nn.Parameter:
         param = nn.Parameter(torch.tensor(0.0))
         self.module.register_parameter(name, param)
         return param
+
+    def remove_parameter(self, name: str):
+        self.module._parameters.pop(name)
 
 
 class LiveNet(nn.Module):
