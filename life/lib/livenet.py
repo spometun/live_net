@@ -163,12 +163,13 @@ class Synapse(GraphNode):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         self.source = source
         self.destination = destination
-        self.context = source.context
+        context = source.context
+        self.context = context
         self.name = f"{source.name}->{destination.name}"
-        self.k = self.context.obtain_float_parameter(self.name)
-        self.random_constant = self.context.random.uniform(-1, 1)
-        self.optimizer = self.context.optimizer_class(self.k, self.context, **self.context.optimizer_init_kwargs)
-        self.liveness_observer = LivenessObserver()
+        self.k = context.obtain_float_parameter(self.name)
+        self.random_constant = context.random.uniform(-1, 1)
+        self.optimizer = context.optimizer_class(self.k, context, **context.optimizer_init_kwargs)
+        self.liveness_observer = LivenessObserver(context, self.k)
         source.add_axon(self)
         destination.add_dendrite(self)
 
@@ -180,11 +181,14 @@ class Synapse(GraphNode):
     def on_grad_update(self):
         self.optimizer.step()
         self.liveness_observer.put(self.k.item())
-        if not self.liveness_observer.looks_ok():
+        status = self.liveness_observer.status()
+        if status == -1:
             self.die()
+        if status == 1:
+            LOG(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
-        LOG(f"{self.name} died")
+        LOG(f"{self.name} died at tick {self.context.tick}")
         self.destination.remove_dendrite(self)
         self.source.remove_axon(self)
         self.context.remove_parameter(self.name)
@@ -212,6 +216,7 @@ class Context:
         self.alpha_l1 = 0.0
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
+        self.tick = 0
         self.reduce_sum_computation = True
 
     def get_name(self, cls):
@@ -282,6 +287,7 @@ class LiveNet(nn.Module):
 
     def on_grad_update(self):
         self.root.visit("on_grad_update")
+        self.context.tick += 1
 
     def input_shape(self):
         return torch.Size([len(self.inputs)])

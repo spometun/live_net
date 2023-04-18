@@ -8,7 +8,7 @@ from life.lib.simple_log import LOG
 
 class Trainer:
     def __init__(self, network: torch.nn.Module, batch_iterator: typing.Iterator,
-                 criterion: typing.Callable, optimizer, epoch_size=1, adaptive_lr=True):
+                 criterion: typing.Callable, optimizer, epoch_size=1, adaptive_lr=False):
         self.network = network
         self.batch_iterator = batch_iterator
         self.criterion = criterion
