@@ -97,7 +97,7 @@ class DestinationNeuron(Neuron):
                 output = output.reshape([])
         else:
             output = self.b
-            for synapse in self.dendrites[1:]:
+            for synapse in self.dendrites:
                 output = output + synapse.output()
         if self.activation is not None:
             output = self.activation(output)
@@ -217,7 +217,7 @@ class Context:
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
         self.tick = 0
-        self.reduce_sum_computation = True
+        self.reduce_sum_computation = False
 
     def get_name(self, cls):
         match cls.__name__:
@@ -269,7 +269,7 @@ class LiveNet(nn.Module):
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i: i + 1])
         outputs = [o.compute_output() for o in self.outputs]
-        utils.broadcast_dimensions(outputs, (len(x), 1))
+        utils.broadcast_dimensions(outputs, (x.shape[0], 1))
         y = torch.cat(outputs, dim=1)
         return y
 
@@ -293,9 +293,9 @@ class LiveNet(nn.Module):
         return torch.Size([len(self.inputs)])
 
 
-def export_onnx(model: nn.Module):
-    dummy_input = torch.zeros((1, *net.input_shape()))
-    torch.onnx.export(model, dummy_input, "/home/spometun/model.onnx", verbose=False)
+def export_onnx(model: nn.Module, path):
+    dummy_input = torch.zeros((1, *model.input_shape()))
+    torch.onnx.export(model, dummy_input, path, verbose=False)
 
 
 if __name__ == "__main__":
