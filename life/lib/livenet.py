@@ -58,7 +58,7 @@ class SourceNeuron(Neuron):
         assert synapse in self.axons, "Internal error"
         self.axons.remove(synapse)
         if len(self.axons) == 0:
-            LOG(f"{self.name} became useless")
+            LOG(f"{self.name} became useless at tick {self.context.tick}")
             self.die()
 
     def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
@@ -119,7 +119,7 @@ class DestinationNeuron(Neuron):
 
     @override()
     def die(self):
-        LOG(f"remove name {self.name}")
+        LOG(f"remove neuron {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
         self.context.remove_parameter(self.name)
 
     @override
@@ -188,7 +188,7 @@ class Synapse(GraphNode):
             LOG(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
-        LOG(f"{self.name} died at tick {self.context.tick}")
+        LOG(f"{self.name} died at tick {self.context.tick} with k={self.k.item():.3f}")
         self.destination.remove_dendrite(self)
         self.source.remove_axon(self)
         self.context.remove_parameter(self.name)

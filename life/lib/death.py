@@ -40,7 +40,7 @@ class LivenessObserver:
             return 0
         history_len = 1 + self.context.tick - self.sign_history[len(self.sign_history) - self.n_sign_history + 1]
         if self.n_small < history_len:
-            LOG(f"Would die but but at least one history value is above threshold "
+            LOG(f"Would die but at least one history value is above threshold "
                 f"n_small={self.n_small} history_len={history_len}")
             return 1
         return -1
