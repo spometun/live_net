@@ -158,7 +158,7 @@ def create_livenet_pyramid():
 
 
 def create_livenet_linear2(l1=0.0):
-    network = lib.livenet.LiveNet(2, None, 2)
+    network = lib.livenet.LiveNet(2, 2, 2)
     network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)
@@ -170,7 +170,7 @@ def create_livenet_linear2(l1=0.0):
 
 
 def create_livenet_linear3(l1=0.0):
-    network = lib.livenet.LiveNet(3, None, 2)
+    network = lib.livenet.LiveNet(3, 2, 2)
     network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)

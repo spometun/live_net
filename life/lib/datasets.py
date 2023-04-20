@@ -66,6 +66,11 @@ def get_mnist_train():
     return _get_mnist(True)
 
 
+def to_plain_odd(x, y):
+    x = x.reshape(len(x), -1)
+    y = y % 2
+    return x, y
+
 if __name__ == "__main__":
     t = get_mnist_test()
     pass
