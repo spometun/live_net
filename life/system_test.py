@@ -18,20 +18,9 @@ def test_bug():
     print(torch.__version__)
     np.set_printoptions(precision=3)
     lib.utils.set_seed()
-    network = lib.livenet.LiveNet(1, 1, 2)
+    network = lib.livenet.LiveNet(1, None, 2)
     network.zero_grad(False)
-
-    if False:
-        network.outputs[0].optimizer.step()
-        network.outputs[0].dendrites[0].optimizer.step()
-        network.outputs[0].dendrites[0].die()
-        network.inputs[0].axons[0].optimizer.step()
-        network.inputs[0].axons[0].die()
-        network.outputs[1].optimizer.step()
-        network.outputs[1].dendrites[0].optimizer.step()
-        network.outputs[1].dendrites[0].die()
-    else:
-        network.on_grad_update()
+    network.on_grad_update()
 
 
 def test_die():
