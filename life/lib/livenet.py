@@ -153,13 +153,13 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
             LOG("a**********************************8888")
             self.context.death_stat.off_dangle_neuron(self)
             LOG("a**********************************8888")
-            v3 = self.ku
-            LOG("a2")
-            v2 = bu
-            v = self.dangle_neurons
-            print(f"total dangle = {self.dangle_neurons}")
-            LOG(f"total dangle = {self.dangle_neurons}")
-            LOG("b")
+            v3 = self.ku23
+            # LOG("a2")
+            # v2 = bu
+            # v = self.dangle_neurons
+            # print(f"total dangle = {self.dangle_neurons}")
+            # LOG(f"total dangle = {self.dangle_neurons}")
+            # LOG("b")
         else:
             LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
             while len(self.dendrites) > 0:
@@ -186,11 +186,13 @@ class Synapse(GraphNode):
         destination.add_dendrite(self)
 
     def init_weight(self):
+        assert self.source is not None, "Internal error"
         v = math.sqrt(1 / len(self.destination.dendrites))
         with torch.no_grad():
             self.k[...] = self.context.random.uniform(-v, v)
 
     def on_grad_update(self):
+        assert self.source is not None, "Internal error"
         self.die()
         return
         self.optimizer.step()
@@ -202,23 +204,29 @@ class Synapse(GraphNode):
             LOG(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
-        if self.name == "N4->D0":
-            pass
+        assert self.source is not None, "Internal error"
         LOG(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
         self.destination.remove_dendrite(self)
+        self.destination = None
         self.source.remove_axon(self)
+        self.source = None
         self.context.remove_parameter(self.name)
 
     def output(self):
+        assert self.source is not None, "Internal error"
         output = self.k * self.source.compute_output()
         return output
 
     def internal_loss(self, loss: ValueHolder):
+        assert self.source is not None, "Internal error"
         alpha_l1 = self.context.alpha_l1 * (1 + 0.1 * self.random_constant)
         loss.value += alpha_l1 * torch.abs(self.k)
 
     def get_adjacent_nodes(self) -> List[GraphNode]:
-        return [self.source]
+        if self.source is not None:
+            return [self.source]
+        else:
+            return []
 
 
 class Context:
