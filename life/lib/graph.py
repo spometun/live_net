@@ -109,7 +109,7 @@ def test_remove():
         def untie(self, node):
             self.counter -= 1
             if self.counter == 0:
-                # v = self.ku43
+                v = self.ku43
                 LOG(f"{self.name} die")
 
     class S(NodesHolder):
