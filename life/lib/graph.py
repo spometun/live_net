@@ -117,20 +117,29 @@ def test_remove():
     class S(NodesHolder):
         def __init__(self, name, nodes: List[GraphNode]):
             super().__init__(name, nodes)
-            self.back = None
         def f(self):
             LOG(f"f {self.name}")
-            # self.back.nodes.remove(self)
             self.nodes[0].untie(self)
             self.nodes.clear()
 
     n0 = N()
-    s00 = S("n0->d0", [n0])
-    s01 = S("n0->d1", [n0])
-    d0 = NodesHolder("d0", [s00])
-    s00.back = d0
-    d1 = NodesHolder("d1", [s01])
-    s01.back = d1
+    d0 = S("d0", [n0])
+    d1 = S("d1", [n0])
     root = NodesHolder("root", [d0, d1])
-    with pytest.raises(AttributeError):
-        root.visit("f")
+    # with pytest.raises(AttributeError):
+    root.visit("f")
+
+
+def test_bug():
+    class C:
+        def f(self):
+            LOG("f...")
+            v = self.ku32
+        def g(self):
+            try:
+                exec("self.f()")
+            except AttributeError:
+                pass
+
+    c = C()
+    c.g()
