@@ -56,7 +56,10 @@ class AdamLiveNet:
 
     def zero_grad(self):
         with torch.no_grad():
-            self.parameter.grad.zero_()
+            if self.parameter.grad is None:
+                self.parameter.grad = torch.zeros_like(self.parameter)
+            else:
+                self.parameter.grad.zero_()
 
     def step(self):
         with torch.no_grad():
