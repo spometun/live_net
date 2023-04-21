@@ -1,6 +1,6 @@
 import typing
 from typing import List, Union
-from overrides import override
+# from overrides import override
 import abc
 import torch
 import torch.nn as nn
@@ -65,7 +65,7 @@ class SourceNeuron(Neuron):
         synapse = Synapse(self, destination)
         return synapse
 
-    @override
+    # @override
     def get_adjacent_nodes(self) -> List["GraphNode"]:
         return []
 
@@ -117,12 +117,12 @@ class DestinationNeuron(Neuron):
         synapse = Synapse(source, self)
         return synapse
 
-    @override()
+    # @override
     def die(self):
         LOG(f"remove neuron {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
         self.context.remove_parameter(self.name)
 
-    @override
+    # @override
     def get_adjacent_nodes(self) -> List["GraphNode"]:
         return self.dendrites
 
@@ -143,15 +143,16 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context, activation)
 
-    @override
+    # @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
         LOG(f"killing {self.name}")
         if len(self.dendrites) == 0:
             self.context.death_stat.off_dangle_neuron(self)
             LOG("a")
-            v = self.dangle_neurons
+            v3 = self.ku
             v2 = bu
+            v = self.dangle_neurons
             print(f"total dangle = {self.dangle_neurons}")
             LOG(f"total dangle = {self.dangle_neurons}")
             LOG("b")
