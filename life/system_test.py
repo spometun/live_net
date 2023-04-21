@@ -32,10 +32,13 @@ def test_bug():
 
     network.context.alpha_l1 = 0.9
 
-    network.inputs[0].axons[0].die()
-    network.outputs[1].dendrites[0].die()
-    network.outputs[0].dendrites[0].die()
-
+    # network.inputs[0].axons[0].die()
+    # network.outputs[1].dendrites[0].die()
+    # network.outputs[0].dendrites[0].die()
+    #
+    optimizer.zero_grad()
+    optimizer.step()
+    # network.on_grad_update()
     # trainer.step(500)
 
     # for src in network.inputs:

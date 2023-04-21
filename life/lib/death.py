@@ -36,6 +36,7 @@ class LivenessObserver:
 
     # 0 - ok, -1 - die, 1 - would die, but at least one history value is above threshold
     def status(self):
+        return -1
         if self.sign_history[0] == -math.inf:
             return 0
         history_len = 1 + self.context.tick - self.sign_history[len(self.sign_history) - self.n_sign_history + 1]
