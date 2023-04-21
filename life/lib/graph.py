@@ -32,10 +32,17 @@ class GraphNode:
             return
         LOG(f"visit {name}")
         args_str = ", ".join( (f"args[{i}]" for i in range(len(args))) )
-        try:
-            exec(f"self.{function_name}({args_str})")
-        except AttributeError:
-            pass
+        if True:
+            try:
+                exec(f"self.{function_name}({args_str})")
+            except AttributeError:
+                pass
+        else:
+            try:
+                f = type(self).__dict__[function_name]
+                f(self, *args)
+            except KeyError:
+                pass
         visited_ids.add(id(self))
         # make a copy because self.get_adjacent_nodes() may change
         # (some visited nodes (but not siblings!) may be disconnected - and removed from adjacent during the visit)
@@ -45,8 +52,9 @@ class GraphNode:
 
 
 class NodesHolder(GraphNode):
-    def __init__(self, nodes: List[GraphNode]):
+    def __init__(self, name, nodes: List[GraphNode]):
         self.nodes = nodes
+        self.name = name
 
     def get_adjacent_nodes(self) -> List[GraphNode]:
         return self.nodes
@@ -87,3 +95,39 @@ def test_graph():
     v = [0]
     n5.visit("summator", v)
     assert v[0] == 15
+
+
+def test_remove():
+    class N(GraphNode):
+        def __init__(self):
+            self.name = "N"
+            self.counter = 2
+        def get_adjacent_nodes(self) -> List["GraphNode"]:
+            return []
+        def f(self):
+            LOG("f N")
+        def untie(self, node):
+            self.counter -= 1
+            if self.counter == 0:
+                # v = self.ku43
+                LOG(f"{self.name} die")
+
+    class S(NodesHolder):
+        def __init__(self, name, nodes: List[GraphNode]):
+            super().__init__(name, nodes)
+            self.back = None
+        def f(self):
+            LOG(f"f {self.name}")
+            self.back.nodes.remove(self)
+            self.nodes[0].untie(self)
+            self.nodes.clear()
+
+    n0 = N()
+    s00 = S("n0->d0", [n0])
+    s01 = S("n0->d1", [n0])
+    d0 = NodesHolder("d0", [s00])
+    s00.back = d0
+    d1 = NodesHolder("d1", [s01])
+    s01.back = d1
+    root = NodesHolder("root", [d0, d1])
+    root.visit("f")

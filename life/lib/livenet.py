@@ -272,7 +272,7 @@ class LiveNet(nn.Module):
         self.context = Context(self, seed)
         self.inputs = [RegularNeuron(self.context, None) for _ in range(n_inputs)]
         self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
-        self.root = NodesHolder(self.outputs)
+        self.root = NodesHolder("root", self.outputs)
         if n_middle is None:
             for input_ in self.inputs:
                 for output in self.outputs:
