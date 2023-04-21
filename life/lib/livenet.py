@@ -119,6 +119,7 @@ class DestinationNeuron(Neuron):
 
     # @override
     def die(self):
+        # TODO: WHAT WITH DENDRITES??
         LOG(f"remove neuron {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
         self.context.remove_parameter(self.name)
 
@@ -148,9 +149,11 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
         LOG(f"killing {self.name}")
         if len(self.dendrites) == 0:
+            LOG("a**********************************8888")
             self.context.death_stat.off_dangle_neuron(self)
-            LOG("a")
+            LOG("a**********************************8888")
             v3 = self.ku
+            LOG("a2")
             v2 = bu
             v = self.dangle_neurons
             print(f"total dangle = {self.dangle_neurons}")
