@@ -79,6 +79,7 @@ class DestinationNeuron(Neuron):
         self.activation = activation
 
     def on_grad_update(self):
+        return
         self.optimizer.step()
 
     def _compute_output(self) -> torch.Tensor:
@@ -190,6 +191,8 @@ class Synapse(GraphNode):
             self.k[...] = self.context.random.uniform(-v, v)
 
     def on_grad_update(self):
+        self.die()
+        return
         self.optimizer.step()
         self.liveness_observer.put(self.k.item())
         status = self.liveness_observer.status()
@@ -259,7 +262,7 @@ class LiveNet(nn.Module):
     def __init__(self, n_inputs, n_middle, n_outputs, seed=0):
         super().__init__()
         self.context = Context(self, seed)
-        self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
+        self.inputs = [RegularNeuron(self.context, None) for _ in range(n_inputs)]
         self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
         self.root = NodesHolder(self.outputs)
         if n_middle is None:

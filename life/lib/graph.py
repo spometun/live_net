@@ -23,15 +23,22 @@ class GraphNode:
         del visited_ids
 
     def _visit(self, function_name: str, args: tuple, visited_ids: set):
+        try:
+            name = self.name
+        except AttributeError:
+            name = "NoName"
         if id(self) in visited_ids:
+            LOG(f"{name} already visited")
             return
+        LOG(f"visit {name}")
         args_str = ", ".join( (f"args[{i}]" for i in range(len(args))) )
         try:
             exec(f"self.{function_name}({args_str})")
         except AttributeError:
             pass
         visited_ids.add(id(self))
-        # make a copy because some visited nodes (but not siblings!) may be disconnected during the visit
+        # make a copy because self.get_adjacent_nodes() may change
+        # (some visited nodes (but not siblings!) may be disconnected - and removed from adjacent during the visit)
         adjacent_nodes = self.get_adjacent_nodes()[:]
         for node in adjacent_nodes:
             node._visit(function_name, args, visited_ids=visited_ids)
