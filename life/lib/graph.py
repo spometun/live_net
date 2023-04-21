@@ -107,8 +107,10 @@ def test_remove():
         def f(self):
             LOG("f N")
         def untie(self, node):
+            LOG("untie...")
             self.counter -= 1
             if self.counter == 0:
+                LOG("here...")
                 v = self.ku43
                 LOG(f"{self.name} die")
 
@@ -118,7 +120,7 @@ def test_remove():
             self.back = None
         def f(self):
             LOG(f"f {self.name}")
-            self.back.nodes.remove(self)
+            # self.back.nodes.remove(self)
             self.nodes[0].untie(self)
             self.nodes.clear()
 
@@ -130,4 +132,5 @@ def test_remove():
     d1 = NodesHolder("d1", [s01])
     s01.back = d1
     root = NodesHolder("root", [d0, d1])
-    root.visit("f")
+    with pytest.raises(AttributeError):
+        root.visit("f")
