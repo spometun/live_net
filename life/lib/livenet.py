@@ -153,7 +153,6 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
             LOG("a**********************************8888")
             self.context.death_stat.off_dangle_neuron(self)
             LOG("a**********************************8888")
-            v3 = self.ku23
             # LOG("a2")
             # v2 = bu
             # v = self.dangle_neurons
@@ -339,3 +338,17 @@ if __name__ == "__main__":
 
     LOG("Here")
     # net = LiveNet(2, 1)
+
+
+def test_die():
+    module = torch.nn.Module()
+    context = Context(module, 42)
+    src = RegularNeuron(context, activation=torch.nn.ReLU())
+    neuron = RegularNeuron(context, activation=torch.nn.ReLU)
+    dst = DestinationNeuron(context, activation=None)
+    src.connect_to(neuron)
+    neuron.connect_to(dst)
+    assert len(src.axons) == 1
+    dst.dendrites[0].die()
+    assert len(src.axons) == 0
+    assert context.death_stat.dangle_neurons == 1

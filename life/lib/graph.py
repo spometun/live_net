@@ -30,19 +30,15 @@ class GraphNode:
         if id(self) in visited_ids:
             LOG(f"{name} already visited")
             return
-        LOG(f"visit {name}")
-        args_str = ", ".join( (f"args[{i}]" for i in range(len(args))) )
-        if True:
-            try:
-                exec(f"self.{function_name}({args_str})")
-            except AttributeError:
-                pass
-        else:
-            try:
-                f = type(self).__dict__[function_name]
-                f(self, *args)
-            except KeyError:
-                pass
+
+        LOG(f"visiting {name}")
+        try:
+            function = type(self).__dict__[function_name]
+        except KeyError:
+            function = None
+        if function is not None:
+            function(self, *args)
+
         visited_ids.add(id(self))
         # make a copy because self.get_adjacent_nodes() may change
         # (some visited nodes (but not siblings!) may be disconnected - and removed from adjacent during the visit)
@@ -72,8 +68,7 @@ def test_graph():
         def print(self):
             print(f"{self.num} {super()._global_counter}")
 
-        @staticmethod
-        def func():
+        def func(self):
             GL._call_counter += 1
 
         def summator(self, v):
@@ -97,37 +92,16 @@ def test_graph():
     assert v[0] == 15
 
 
-def test_remove():
+def test_except():
     class N(GraphNode):
-        def __init__(self):
-            self.name = "N"
-            self.counter = 2
         def get_adjacent_nodes(self) -> List["GraphNode"]:
             return []
         def f(self):
-            LOG("f N")
-        def untie(self, node):
-            LOG("untie...")
-            self.counter -= 1
-            if self.counter == 0:
-                LOG("here...")
-                v = self.ku43
-                LOG(f"{self.name} die")
+            v = self.__dict__["ku43"]
 
-    class S(NodesHolder):
-        def __init__(self, name, nodes: List[GraphNode]):
-            super().__init__(name, nodes)
-        def f(self):
-            LOG(f"f {self.name}")
-            self.nodes[0].untie(self)
-            self.nodes.clear()
-
-    n0 = N()
-    d0 = S("d0", [n0])
-    d1 = S("d1", [n0])
-    root = NodesHolder("root", [d0, d1])
-    # with pytest.raises(AttributeError):
-    root.visit("f")
+    node = N()
+    with pytest.raises(KeyError):
+        node.visit("f")
 
 
 def test_bug():

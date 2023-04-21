@@ -33,5 +33,6 @@ def test_die():
     neuron.connect_to(dst)
     dst.dendrites[0].die()
     assert context.death_stat.dangle_neurons == 1
+    assert len(src.axons) == 0
 
 
