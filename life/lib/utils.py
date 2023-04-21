@@ -76,7 +76,7 @@ def set_parameters(network: torch.nn.Module, params: list):
         for i, p in enumerate(net_params):
             net_params[i][...] = torch.tensor(params[i][...])
 
-
+'''
 def add_noise_to_params(params: list, a, b):
     with torch.no_grad():
         for i in range(len(params)):
@@ -92,6 +92,7 @@ def add_noise_to_params(params: list, a, b):
                     val = float(p[*index])
                     val = random.uniform(-b, b) + (1 + random.uniform(-a, a)) * val
                     params[i][*index] = val
+'''
 
 
 def broadcast_dimensions(tensors: list[torch.Tensor], target_shape: tuple = None):
