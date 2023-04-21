@@ -223,7 +223,7 @@ class Context:
         self.random = random.Random(seed)
         self.module = module
         self.n_params = 0
-        self.learning_rate = None
+        self.learning_rate = 0.0
         self.optimizer_class = optimizer.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
