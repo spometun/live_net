@@ -276,7 +276,7 @@ class LiveNet(nn.Module):
                     input_.connect_to(neuron)
                 for output in self.outputs:
                     output.connect_from(neuron)
-        self.root.visit("init_weight")
+        # self.root.visit("init_weight")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"

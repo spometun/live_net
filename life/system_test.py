@@ -19,7 +19,7 @@ def test_bug():
     np.set_printoptions(precision=3)
     lib.utils.set_seed()
     network = lib.livenet.LiveNet(1, None, 2)
-    network.zero_grad(False)
+    # network.zero_grad(False)
     network.on_grad_update()
 
 
