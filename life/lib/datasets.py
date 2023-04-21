@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torchvision
 
@@ -66,7 +67,13 @@ def get_mnist_train():
     return _get_mnist(True)
 
 
-def to_plain_odd(x, y):
+def to_plain_odd(x, y, downscale=1):
+    x = torch.squeeze(x, 1)
+    assert x.shape[1] == x.shape[2]
+    n = x.shape[1]
+    assert n % downscale == 0
+    x = x.reshape(len(x), n // downscale, downscale, n // downscale, downscale)
+    x = x.mean(axis=(2, 4), keepdims=False)
     x = x.reshape(len(x), -1)
     y = y % 2
     return x, y

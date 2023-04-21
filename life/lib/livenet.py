@@ -146,8 +146,15 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
+        LOG(f"killing {self.name}")
         if len(self.dendrites) == 0:
             self.context.death_stat.off_dangle_neuron(self)
+            LOG("a")
+            v = self.dangle_neurons
+            v2 = bu
+            print(f"total dangle = {self.dangle_neurons}")
+            LOG(f"total dangle = {self.dangle_neurons}")
+            LOG("b")
         else:
             LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
             while len(self.dendrites) > 0:
@@ -188,7 +195,9 @@ class Synapse(GraphNode):
             LOG(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
-        LOG(f"{self.name} died at tick {self.context.tick} with k={self.k.item():.3f}")
+        if self.name == "N4->D0":
+            pass
+        LOG(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
         self.destination.remove_dendrite(self)
         self.source.remove_axon(self)
         self.context.remove_parameter(self.name)

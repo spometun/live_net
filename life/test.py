@@ -2,6 +2,17 @@ from matplotlib import pyplot as plt
 import matplotlib
 import numpy as np
 import life.lib as lib
+from life.lib.simple_log import LOG
+
+
+class C:
+    def __init__(self):
+        self.a1 = 9
+
+
+def f():
+    c = C()
+    LOG(f"{c.a2}")
 
 
 if __name__ == "__main__":
