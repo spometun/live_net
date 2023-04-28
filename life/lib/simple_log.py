@@ -21,8 +21,8 @@ log_ipython_execution_count = -1
 
 def _get_code_info():
     frame1 = sys._getframe(1)
-    frame2 = sys._getframe(3)
-    return frame1.f_code.co_filename, frame2.f_code.co_filename, frame2.f_lineno
+    frame3 = sys._getframe(3)
+    return frame1.f_code.co_filename, frame3.f_code.co_filename, frame3.f_lineno
 
 
 def _LOG(level, *args):
