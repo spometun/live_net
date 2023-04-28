@@ -36,4 +36,7 @@ importlib.reload(nets)
 from . import trainer
 importlib.reload(trainer)
 
+from . import test_livenet
+importlib.reload(test_livenet)
+
 

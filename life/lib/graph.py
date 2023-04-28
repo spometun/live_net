@@ -2,7 +2,7 @@ import pytest
 from typing import List
 import abc
 
-from life.lib.simple_log import LOG
+from life.lib.simple_log import LOG, LOGD
 
 
 class GraphNode:
@@ -28,21 +28,18 @@ class GraphNode:
         except AttributeError:
             name = "NoName"
         if id(self) in visited_ids:
-            LOG(f"{name} already visited")
+            LOGD(f"{name} already visited")
             return
 
-        LOG(f"visiting {name}")
-        try:
-            function = type(self).__dict__[function_name]
-        except KeyError:
-            function = None
+        LOGD(f"visiting {name}")
+        function = getattr(self, function_name, None)
         if function is not None:
-            function(self, *args)
+            function(*args)
 
         visited_ids.add(id(self))
         # make a copy because self.get_adjacent_nodes() may change
-        # (some visited nodes (but not siblings!) may be disconnected - and removed from adjacent during the visit)
-        adjacent_nodes = self.get_adjacent_nodes()[:]
+        # (some visited children  may be disconnected - and removed from adjacent during the visit)
+        adjacent_nodes = [node for node in self.get_adjacent_nodes()]
         for node in adjacent_nodes:
             node._visit(function_name, args, visited_ids=visited_ids)
 
