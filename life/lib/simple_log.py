@@ -1,9 +1,18 @@
 import inspect
+from enum import Enum
 import sys
 import os
 import time
 import re
 import IPython
+
+
+class LogLevel(Enum):
+    DEBUG = 0
+    INFO = 1
+
+
+level = LogLevel(1)
 
 
 log_global_time = 0.0
@@ -12,11 +21,11 @@ log_ipython_execution_count = -1
 
 def _get_code_info():
     frame1 = sys._getframe(1)
-    frame2 = sys._getframe(2)
+    frame2 = sys._getframe(3)
     return frame1.f_code.co_filename, frame2.f_code.co_filename, frame2.f_lineno
 
 
-def LOG(*args):
+def _LOG(level, *args):
     global log_global_time
     global log_ipython_execution_count
 
@@ -41,7 +50,15 @@ def LOG(*args):
     if is_pycharm_ipython_match is not None:
         location = ""
 
-    print(f"I\u02c8{time_:.3f}", *args, location)
+    print(f"{level}\u02c8{time_:.3f}", *args, location)
 
+
+def LOG(*args):
+    _LOG("I", *args)
+
+
+def LOGD(*args):
+    if level == LogLevel.DEBUG:
+        _LOG("D", *args)
 
 

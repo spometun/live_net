@@ -79,7 +79,6 @@ class DestinationNeuron(Neuron):
         self.activation = activation
 
     def on_grad_update(self):
-        return
         self.optimizer.step()
 
     def _compute_output(self) -> torch.Tensor:
@@ -120,8 +119,10 @@ class DestinationNeuron(Neuron):
 
     # @override
     def die(self):
-        # TODO: WHAT WITH DENDRITES??
-        LOG(f"remove neuron {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
+        LOG(f"killing {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
+        while len(self.dendrites) > 0:
+            self.dendrites[0].die()
+        self.context.death_stat.off_dangle_neuron(self)
         self.context.remove_parameter(self.name)
 
     # @override
@@ -148,23 +149,9 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     # @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        LOG(f"killing {self.name}")
-        if len(self.dendrites) == 0:
-            LOG("a**********************************8888")
-            self.context.death_stat.off_dangle_neuron(self)
-            LOG("a**********************************8888")
-            # LOG("a2")
-            # v2 = bu
-            # v = self.dangle_neurons
-            # print(f"total dangle = {self.dangle_neurons}")
-            # LOG(f"total dangle = {self.dangle_neurons}")
-            # LOG("b")
-        else:
-            LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
-            while len(self.dendrites) > 0:
-                self.dendrites[0].die()
         assert issubclass(RegularNeuron, DestinationNeuron)
         super(RegularNeuron, self).die()
+        # LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
 
 
 class Synapse(GraphNode):
@@ -185,15 +172,13 @@ class Synapse(GraphNode):
         destination.add_dendrite(self)
 
     def init_weight(self):
-        assert self.source is not None, "Internal error"
+        assert self.source is not None and self.destination is not None, "Internal error"
         v = math.sqrt(1 / len(self.destination.dendrites))
         with torch.no_grad():
             self.k[...] = self.context.random.uniform(-v, v)
 
     def on_grad_update(self):
-        assert self.source is not None, "Internal error"
-        self.die()
-        return
+        assert self.source is not None and self.destination is not None, "Internal error"
         self.optimizer.step()
         self.liveness_observer.put(self.k.item())
         status = self.liveness_observer.status()
@@ -203,7 +188,7 @@ class Synapse(GraphNode):
             LOG(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
-        assert self.source is not None, "Internal error"
+        assert self.source is not None and self.destination is not None, "Internal error"
         LOG(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
         self.destination.remove_dendrite(self)
         self.destination = None
@@ -212,12 +197,12 @@ class Synapse(GraphNode):
         self.context.remove_parameter(self.name)
 
     def output(self):
-        assert self.source is not None, "Internal error"
+        assert self.source is not None and self.destination is not None, "Internal error"
         output = self.k * self.source.compute_output()
         return output
 
     def internal_loss(self, loss: ValueHolder):
-        assert self.source is not None, "Internal error"
+        assert self.source is not None and self.destination is not None, "Internal error"
         alpha_l1 = self.context.alpha_l1 * (1 + 0.1 * self.random_constant)
         loss.value += alpha_l1 * torch.abs(self.k)
 
@@ -225,6 +210,8 @@ class Synapse(GraphNode):
         if self.source is not None:
             return [self.source]
         else:
+            # dead synapse will be inquired for children during the visit it died
+            # because of Graph visit logic
             return []
 
 
@@ -269,7 +256,7 @@ class LiveNet(nn.Module):
     def __init__(self, n_inputs, n_middle, n_outputs, seed=0):
         super().__init__()
         self.context = Context(self, seed)
-        self.inputs = [RegularNeuron(self.context, None) for _ in range(n_inputs)]
+        self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
         self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
         self.root = NodesHolder("root", self.outputs)
         if n_middle is None:
@@ -283,7 +270,7 @@ class LiveNet(nn.Module):
                     input_.connect_to(neuron)
                 for output in self.outputs:
                     output.connect_from(neuron)
-        # self.root.visit("init_weight")
+        self.root.visit("init_weight")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
