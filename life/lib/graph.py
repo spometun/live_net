@@ -99,18 +99,3 @@ def test_except():
     node = N()
     with pytest.raises(KeyError):
         node.visit("f")
-
-
-def test_bug():
-    class C:
-        def f(self):
-            LOG("f...")
-            v = self.ku32
-        def g(self):
-            try:
-                exec("self.f()")
-            except AttributeError:
-                pass
-
-    c = C()
-    c.g()

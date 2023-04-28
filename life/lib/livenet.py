@@ -151,7 +151,6 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
         assert issubclass(RegularNeuron, DestinationNeuron)
         super(RegularNeuron, self).die()
-        # LOG(f"initiating death of {len(self.dendrites)} dendrites of {self.name}")
 
 
 class Synapse(GraphNode):
@@ -190,10 +189,12 @@ class Synapse(GraphNode):
     def die(self):
         assert self.source is not None and self.destination is not None, "Internal error"
         LOG(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
-        self.destination.remove_dendrite(self)
+        dst = self.destination
         self.destination = None
-        self.source.remove_axon(self)
+        src = self.source
         self.source = None
+        dst.remove_dendrite(self)
+        src.remove_axon(self)
         self.context.remove_parameter(self.name)
 
     def output(self):
@@ -220,7 +221,7 @@ class Context:
         self.random = random.Random(seed)
         self.module = module
         self.n_params = 0
-        self.learning_rate = 0.0
+        self.learning_rate = None
         self.optimizer_class = optimizer.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
