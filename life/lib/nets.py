@@ -121,9 +121,8 @@ def create_livenet_odd(l1=0.0):
     return network
 
 
-def create_livenet_odd_2(l1=0.0):
-    network = lib.livenet.LiveNet(1, 2, 2)
-    network.context.alpha_l1 = l1
+def create_livenet_odd_2(context=None):
+    network = lib.livenet.LiveNet().create_perceptron(1, 2, 2, context)
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
         network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)
@@ -206,6 +205,10 @@ class LINEAR3(nn.Module):
             if len(param.shape) > 1:
                 loss += self.alpha_l1 * torch.sum(torch.abs(param))
         return loss
+    
+    
+def livenet_perceptron(n_inputs, n_middle, n_outputs, context=None):
+    pass
 
 
 def create_optimizer(net: torch.nn.Module):

@@ -74,13 +74,16 @@ class Trainer:
     def _on_epoch(self):
         params = lib.utils.get_parameters_dict(self.network)
         grads = lib.utils.get_gradients_dict(self.network)
-        self.history.append({"params": params, "grads": grads})
         epoch_loss_criterion = self.loss_criterion
         epoch_loss_network = self.loss_network
         good_ratio = self.counter_good / self.epoch_size
         if self.counter != 0:
             epoch_loss_criterion /= self.epoch_size
             epoch_loss_network /= self.epoch_size
+        self.history.append({"params": params,
+                             "grads": grads,
+                             "loss": epoch_loss_criterion,
+                             "loss_reg": epoch_loss_network})
         msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
         # if epoch_loss_network != 0.0:
         msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"

@@ -4,7 +4,7 @@ import collections
 
 import numpy as np
 
-from life.lib.simple_log import LOG
+from life.lib.simple_log import LOG, LOGD
 
 
 class LivenessObserver:
@@ -12,16 +12,14 @@ class LivenessObserver:
     def sign(x):
         return 1 if x >= 0 else -1
 
-    def __init__(self, context, value):
+    def __init__(self, context):
         self.threshold = 0.05
-        self.n_sign_history = 5
-        self.dead = False
         self.context = context
         self.n_small = 0
-        self.value = value
-        self.last_sign = self.sign(value)
-        # allow other n_sign_history for value move until settle in
-        self.sign_history = collections.deque(2 * self.n_sign_history * [-math.inf])
+        self.last_sign = 0
+        n_sign = context.liveness_die_after_n_sign_changes
+        # allow other n_sign times for value move until settle in
+        self.sign_history = collections.deque(2 * n_sign * [-math.inf])
 
     def put(self, x: float):
         sign = self.sign(x)
@@ -36,12 +34,13 @@ class LivenessObserver:
 
     # 0 - ok, -1 - die, 1 - would die, but at least one history value is above threshold
     def status(self):
-        return -1
+        # return -1
         if self.sign_history[0] == -math.inf:
             return 0
-        history_len = 1 + self.context.tick - self.sign_history[len(self.sign_history) - self.n_sign_history + 1]
+        n_sign = self.context.liveness_die_after_n_sign_changes
+        history_len = 1 + self.context.tick - self.sign_history[len(self.sign_history) - n_sign + 1]
         if self.n_small < history_len:
-            LOG(f"Would die but at least one history value is above threshold "
+            LOGD(f"Would die but at least one history value is above threshold "
                 f"n_small={self.n_small} history_len={history_len}")
             return 1
         return -1

@@ -1,6 +1,6 @@
 import typing
 from typing import List, Union
-# from overrides import override
+from overrides import override
 import abc
 import torch
 import torch.nn as nn
@@ -13,7 +13,7 @@ import life.lib.utils as utils
 from life.lib.utils import ValueHolder
 
 
-from life.lib.simple_log import LOG
+from life.lib.simple_log import LOG, LOGD
 import life.lib.optimizer as optimizer
 
 
@@ -65,7 +65,7 @@ class SourceNeuron(Neuron):
         synapse = Synapse(self, destination)
         return synapse
 
-    # @override
+    @override
     def get_adjacent_nodes(self) -> List["GraphNode"]:
         return []
 
@@ -117,7 +117,7 @@ class DestinationNeuron(Neuron):
         synapse = Synapse(source, self)
         return synapse
 
-    # @override
+    @override
     def die(self):
         LOG(f"killing {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
         while len(self.dendrites) > 0:
@@ -125,7 +125,7 @@ class DestinationNeuron(Neuron):
         self.context.death_stat.off_dangle_neuron(self)
         self.context.remove_parameter(self.name)
 
-    # @override
+    @override
     def get_adjacent_nodes(self) -> List["GraphNode"]:
         return self.dendrites
 
@@ -166,7 +166,7 @@ class Synapse(GraphNode):
         self.k = context.obtain_float_parameter(self.name)
         self.random_constant = context.random.uniform(-1, 1)
         self.optimizer = context.optimizer_class(self.k, context, **context.optimizer_init_kwargs)
-        self.liveness_observer = LivenessObserver(context, self.k)
+        self.liveness_observer = LivenessObserver(context)
         source.add_axon(self)
         destination.add_dendrite(self)
 
@@ -184,7 +184,7 @@ class Synapse(GraphNode):
         if status == -1:
             self.die()
         if status == 1:
-            LOG(f"{self.name} didn't die because of not small values in it's history")
+            LOGD(f"{self.name} didn't die because of not small values in it's history")
 
     def die(self):
         assert self.source is not None and self.destination is not None, "Internal error"
@@ -217,9 +217,9 @@ class Synapse(GraphNode):
 
 
 class Context:
-    def __init__(self, module: nn.Module, seed):
+    def __init__(self, seed=0):
+        self.module = None
         self.random = random.Random(seed)
-        self.module = module
         self.n_params = 0
         self.learning_rate = None
         self.optimizer_class = optimizer.AdamLiveNet
@@ -228,6 +228,7 @@ class Context:
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
         self.tick = 0
+        self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False
 
     def get_name(self, cls):
@@ -254,24 +255,32 @@ class Context:
 
 
 class LiveNet(nn.Module):
-    def __init__(self, n_inputs, n_middle, n_outputs, seed=0):
+    def __init__(self):
         super().__init__()
-        self.context = Context(self, seed)
-        self.inputs = [DataNeuron(self.context) for _ in range(n_inputs)]
-        self.outputs = [DestinationNeuron(self.context, activation=None) for _ in range(n_outputs)]
-        self.root = NodesHolder("root", self.outputs)
+
+    @classmethod
+    def create_perceptron(cls, n_inputs, n_middle, n_outputs, context=None):
+        net = cls()
+        if context is None:
+            context = Context()
+        context.module = net  # todo: not needed?
+        net.context = context
+        net.inputs = [DataNeuron(context) for _ in range(n_inputs)]
+        net.outputs = [DestinationNeuron(context, activation=None) for _ in range(n_outputs)]
+        net.root = NodesHolder("root", net.outputs)
         if n_middle is None:
-            for input_ in self.inputs:
-                for output in self.outputs:
+            for input_ in net.inputs:
+                for output in net.outputs:
                     input_.connect_to(output)
         else:
             for i in range(n_middle):
-                neuron = RegularNeuron(self.context, activation=torch.nn.ReLU())
-                for input_ in self.inputs:
+                neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
+                for input_ in net.inputs:
                     input_.connect_to(neuron)
-                for output in self.outputs:
+                for output in net.outputs:
                     output.connect_from(neuron)
-        self.root.visit("init_weight")
+        net.root.visit("init_weight")
+        return net
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
