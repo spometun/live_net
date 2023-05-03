@@ -73,7 +73,7 @@ def _get_cifar10(train: bool):
             , torchvision.transforms.Normalize([0.5], [0.5])
          ])
     dataset=torchvision.datasets.CIFAR10("/home/spometun/datasets/research", train=train,
-                                       download=True, transform=transform)
+                                       download=False, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
     whole = next(iter(loader))
     data = whole[0]
