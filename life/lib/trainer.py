@@ -87,9 +87,9 @@ class Trainer:
         msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
         # if epoch_loss_network != 0.0:
         msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
-        msg += f" #nparams={len(params)}"
+        msg += f" params={len(params)}"
         if self.adaptive_lr:
-            msg += f" lr={self.optimizer.learning_rate:.5f} gratio={good_ratio:.3f}"
+            msg += f" lr={self.optimizer.learning_rate:.4f}"
         LOG(msg)
         self.loss_criterion = 0.0
         self.loss_network = 0.0
