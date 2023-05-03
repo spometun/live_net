@@ -41,7 +41,7 @@ class Neuron(GraphNode):
     def _compute_output(self) -> torch.Tensor: ...
 
     def die(self):
-        LOG(f"There is no death for {self.name}")
+        LOGD(f"There is no death for {self.name}")
 
 
 # noinspection PyAbstractClass
@@ -149,7 +149,10 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     # @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        assert isinstance(self, RegularNeuron)
+        if not isinstance(self, RegularNeuron):
+            LOG("***********", type(self))
+            LOG("***********", self.name)
+        # assert isinstance(self, RegularNeuron)
         super(RegularNeuron, self).die()
 
 
@@ -188,7 +191,7 @@ class Synapse(GraphNode):
 
     def die(self):
         assert self.source is not None and self.destination is not None, "Internal error"
-        LOG(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
+        LOGD(f"killing {self.name} at tick {self.context.tick} with k={self.k.item():.3f}")
         dst = self.destination
         self.destination = None
         src = self.source
