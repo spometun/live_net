@@ -67,18 +67,47 @@ def get_mnist_train():
     return _get_mnist(True)
 
 
-def to_plain_odd(x, y, downscale=1):
-    x = torch.squeeze(x, 1)
-    assert x.shape[1] == x.shape[2]
-    n = x.shape[1]
-    assert n % downscale == 0
-    x = x.reshape(len(x), n // downscale, downscale, n // downscale, downscale)
-    x = x.mean(axis=(2, 4), keepdims=False)
+def _get_cifar10(train: bool):
+    transform = torchvision.transforms.Compose(
+        [torchvision.transforms.ToTensor()
+            , torchvision.transforms.Normalize([0.5], [0.5])
+         ])
+    dataset=torchvision.datasets.CIFAR10("/home/spometun/datasets/research", train=train,
+                                       download=True, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
+    whole = next(iter(loader))
+    data = whole[0]
+    labels = whole[1]
+    labels = labels[:, None]
+    return data, labels
+
+
+def get_cifar10_test():
+    return _get_cifar10(False)
+
+
+def get_cifar10_train():
+    return _get_cifar10(True)
+
+
+
+def to_plain(x, y, downscale=1, to_odd=False):
+    if not isinstance(downscale, tuple):
+        d = (downscale, downscale)
+    else:
+        d = downscale
+    n0 = x.shape[2]
+    n1 = x.shape[3]
+    assert n0 % d[0] == 0 and n1 % d[1] == 0
+    x = x.reshape(x.shape[0], x.shape[1], n0 // d[0], d[0], n1 // d[1], d[1])
+    x = x.mean(axis=(3, 5), keepdims=False)
     x = x.reshape(len(x), -1)
-    y = y % 2
+    if to_odd:
+        y = y % 2
     return x, y
 
+
 if __name__ == "__main__":
-    t = get_mnist_test()
+    t = get_cifar10_train()
     pass
 

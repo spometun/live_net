@@ -43,13 +43,11 @@ def test_system():
     context.liveness_die_after_n_sign_changes = 2
     context.alpha_l1 = 0.01
     network = lib.nets.create_livenet_odd_2(context)
-    # network.context.liveness_die_after_n_sign_changes = 1
     batch_iterator = lib.gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = lib.nets.criterion_n
     optimizer = lib.optimizer.LiveNetOptimizer(network, lr=0.05)
     trainer = lib.trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
-    y = network.forward(train_x)
     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
     assert trainer.history[0]["loss"] > 0.1
     assert trainer.history[-1]["loss"] < 0.02

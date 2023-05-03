@@ -149,7 +149,7 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     # @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        assert issubclass(RegularNeuron, DestinationNeuron)
+        assert isinstance(self, RegularNeuron)
         super(RegularNeuron, self).die()
 
 
