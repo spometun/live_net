@@ -146,13 +146,9 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context, activation)
 
-    # @override
+    @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        if not isinstance(self, RegularNeuron):
-            LOG("***********", type(self))
-            LOG("***********", self.name)
-        # assert isinstance(self, RegularNeuron)
         super(RegularNeuron, self).die()
 
 
