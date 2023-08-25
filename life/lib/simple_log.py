@@ -4,7 +4,6 @@ import sys
 import os
 import time
 import re
-import IPython
 
 
 class LogLevel(Enum):
@@ -29,12 +28,18 @@ def _LOG(level, *args):
     global log_global_time
     global log_ipython_execution_count
 
-    ipython = IPython.get_ipython()
-    if ipython is not None:
-        cur_count = IPython.get_ipython().execution_count
-        if cur_count != log_ipython_execution_count:
-            log_global_time = 0.0
-            log_ipython_execution_count = cur_count
+
+    try:
+        import IPython
+    except ModuleNotFoundError:
+        pass
+    else:
+        ipython = IPython.get_ipython()
+        if ipython is not None:
+            cur_count = IPython.get_ipython().execution_count
+            if cur_count != log_ipython_execution_count:
+                log_global_time = 0.0
+                log_ipython_execution_count = cur_count
 
     if log_global_time == 0.0:
         log_global_time = time.time()

@@ -15,6 +15,7 @@ import pytest
 
 
 def test_bug():
+    LOG("mercy and Spirit")
     pass
 
 
