@@ -15,6 +15,13 @@ def f():
     LOG(f"{c.a2}")
 
 
+def test_vs():
+    #plt.ion()
+    print("hivs")
+    a = 3
+    print(a * 2)
+
+
 if __name__ == "__main__":
     x = np.arange(20)
     y = x * x
