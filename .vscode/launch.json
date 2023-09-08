@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Func",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_func.py",
+            "args": "${relativeFile} ${lineNumber}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Cur",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_func.py",
+            "args": "life/lib/test_livenet.py 8",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+    ]
+}
