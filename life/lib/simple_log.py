@@ -46,7 +46,7 @@ def _LOG(level, *args):
 
     time_ = time.time() - log_global_time
     this_filename, caller_filename, caller_lineno = _get_code_info()
-    root_dir = os.path.dirname(this_filename) + "/.."
+    root_dir = os.getcwd()
     file = caller_filename
     file = os.path.relpath(file, root_dir)
     line = caller_lineno
