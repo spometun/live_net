@@ -19,6 +19,9 @@ def test_die():
     assert len(src.axons) == 0
     assert context.death_stat.dangle_neurons == 1  # dst
 
+def te():
+    import os
+    LOG(os.getcwd())
 
 def test_system_die_all():
     # lib.simple_log.level = lib.simple_log.LogLevel.DEBUG
