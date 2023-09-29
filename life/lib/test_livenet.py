@@ -21,7 +21,10 @@ def test_die():
 
 def te():
     import os
+
     LOG(os.getcwd())
+    
+    
 
 def test_system_die_all():
     # lib.simple_log.level = lib.simple_log.LogLevel.DEBUG
