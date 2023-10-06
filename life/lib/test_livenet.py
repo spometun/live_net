@@ -30,7 +30,7 @@ def test_system_die_all():
     # lib.simple_log.level = lib.simple_log.LogLevel.DEBUG
     train_x, train_y = lib.datasets.get_odd()
     network = lib.nets.create_livenet_odd_2()
-    network.context.alpha_l1 = 1.0
+    network.context.alpha_l1 = 1.0  # big alhpha will lead to quick death, even with big 'b'
     batch_iterator = lib.gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = lib.nets.criterion_n
     optimizer = lib.optimizer.LiveNetOptimizer(network, lr=0.02)
