@@ -62,10 +62,10 @@ class Trainer:
 
             old_lr = self.optimizer.learning_rate
             if is_good:
-                new_lr = old_lr * 1.02
+                new_lr = old_lr * self.adaptive_lr_increase_step
                 sign = "+ "
             else:
-                new_lr = old_lr / 1.1
+                new_lr = old_lr / self.adaptive_lr_decrease_step
                 sign = "--"
             new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
             # LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
