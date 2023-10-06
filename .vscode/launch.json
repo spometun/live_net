@@ -14,7 +14,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/run_func.py",
-            "args": "${relativeFile} ${lineNumber} life/system_test.py 17",
+            "args": "${relativeFile} ${lineNumber} life/lib/test_livenet.py 29",
             "console": "integratedTerminal",
             "justMyCode": true
         },
