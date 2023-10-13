@@ -226,7 +226,7 @@ class Context:
         self.alpha_l1 = 0.0
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
-        self.tick = 0
+        self.tick: int = 0
         self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False
 
