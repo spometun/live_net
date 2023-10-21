@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+# testpaths = ["./tests/unit"]
+# filterwarnings = ["ignore:::.*third_party_package.module:123", "ignore:::.*another_module*"]
+python_files = ["*.py"]
+log_cli = true
+filterwarnings = ["ignore:::.*pytest*", "ignore:::.*tensorflow*"]
+
