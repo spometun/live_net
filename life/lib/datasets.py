@@ -90,7 +90,6 @@ def get_cifar10_train():
     return _get_cifar10(True)
 
 
-
 def to_plain(x, y, downscale=1, to_odd=False):
     if not isinstance(downscale, tuple):
         d = (downscale, downscale)
