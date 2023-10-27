@@ -21,7 +21,7 @@ class Trainer:
         self.loss_network = 0.0
         self.adaptive_lr = adaptive_lr
         self.adaptive_lr_increase_step = 1.02
-        self.adaptive_lr_decrease_step = 1.1
+        self.adaptive_lr_decrease_step = 1.2
         self.adaptive_lr_max_lr = 0.1
         self.adaptive_lr_min_lr = 0.00001
 
@@ -41,15 +41,14 @@ class Trainer:
 
         self.optimizer.zero_grad()
         all_loss.backward()
-        if self.counter % self.epoch_size == 0:
-            self._on_epoch()
-
         self.optimizer.step()
 
         if self.adaptive_lr:
             self._adjust_lr(data, labels, all_loss)
 
         self.counter += 1
+        if self.counter % self.epoch_size == 0:
+            self._on_epoch()
 
     def _adjust_lr(self, data, labels, all_loss):
         with torch.no_grad():
@@ -77,9 +76,9 @@ class Trainer:
         epoch_loss_criterion = self.loss_criterion
         epoch_loss_network = self.loss_network
         good_ratio = self.counter_good / self.epoch_size
-        if self.counter != 0:
-            epoch_loss_criterion /= self.epoch_size
-            epoch_loss_network /= self.epoch_size
+        # if self.counter != 0:
+        epoch_loss_criterion /= self.epoch_size
+        epoch_loss_network /= self.epoch_size
         self.history.append({"params": params,
                              "grads": grads,
                              "loss": epoch_loss_criterion,
