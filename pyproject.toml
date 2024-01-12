@@ -1,5 +1,5 @@
 [project]
-name="life"
+name="livenet"
 version="0.1"
 
 [tool.pytest.ini_options]
@@ -7,5 +7,6 @@ version="0.1"
 # filterwarnings = ["ignore:::.*third_party_package.module:123", "ignore:::.*another_module*"]
 python_files = ["*.py"]
 log_cli = true
-filterwarnings = ["ignore:::.*pytest*", "ignore:::.*tensorflow*"]
+# filterwarnings = ["ignore:::.*pytest*"]
+filterwarnings = ["ignore:::.*dateutil*"]
 

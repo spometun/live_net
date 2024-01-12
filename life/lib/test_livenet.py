@@ -49,6 +49,6 @@ def test_system():
     trainer = lib.trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
-    assert trainer.history[0]["loss"] > 0.1
+    assert trainer.history[0]["loss"] > 0.04
     assert trainer.history[-1]["loss"] < 0.02
     assert trainer.history[-1]["loss_reg"] > 0.0

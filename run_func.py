@@ -52,7 +52,6 @@ def try_run(file_path: str, line_no: int) -> bool:
     return True
    
 
-
 if __name__ == "__main__":
     file_path = sys.argv[1]
     line_no = int(sys.argv[2])
