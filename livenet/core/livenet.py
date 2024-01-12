@@ -7,14 +7,14 @@ import torch.nn as nn
 import math
 import random
 
-from life.lib.death import LivenessObserver, DeathStat
-from life.lib.graph import GraphNode, NodesHolder
-import life.lib.utils as utils
-from life.lib.utils import ValueHolder
+from .death import LivenessObserver, DeathStat
+from .graph import GraphNode, NodesHolder
+from .utils import ValueHolder
 
 
-from life.lib.simple_log import LOG, LOGD
-import life.lib.optimizer as optimizer
+from simple_log import LOG, LOGD
+from . import optimizers
+from . import utils
 
 
 def test_dev():
@@ -320,18 +320,17 @@ def export_onnx(model: nn.Module, path):
 if __name__ == "__main__":
     utils.set_seed()
     x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
-    net = LiveNet(2, 4, 1)
+    net = LiveNet.create_perceptron(2, 4, 1)
     net.context.reduce_sum_computation = True
     net.forward(x)
     net.forward(x)
 
     LOG('a')
-    export_onnx(net)
+    export_onnx(net, "/home/spometun/table/mu.onnx")
     LOG('b')
 
     p = [p for p in net.named_parameters()]
-    s1 = net.get_parameter("s1")
-
+    LOG(p)
     LOG("Here")
     # net = LiveNet(2, 1)
 

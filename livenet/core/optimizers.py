@@ -1,7 +1,6 @@
 from typing import Optional
 import torch
-from life.lib.simple_log import LOG
-from life.lib.livenet import LiveNet
+from simple_log import LOG
 import math
 
 
@@ -93,7 +92,7 @@ def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs
 
 
 class LiveNetOptimizer:
-    def __init__(self, network: LiveNet, lr):
+    def __init__(self, network: "LiveNet", lr):
         self.network = network
         self.network.context.learning_rate = lr
 

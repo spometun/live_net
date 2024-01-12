@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 import torch.utils.data
 import importlib
-import life.lib as lib
+from . import core
 import typing
-importlib.reload(lib)
-LOG = lib.simple_log.LOG
+importlib.reload(core)
+LOG = core.simple_log.LOG
 import math
 from matplotlib import pyplot as plt
 import pytest

@@ -2,7 +2,7 @@ import pytest
 from typing import List
 import abc
 
-from life.lib.simple_log import LOG, LOGD
+from simple_log import LOG, LOGD
 
 
 class GraphNode:
