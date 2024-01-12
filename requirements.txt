@@ -1,0 +1,6 @@
+pytest
+torch
+scipy
+opencv-python
+overrides
+matplotlib
