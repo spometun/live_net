@@ -275,7 +275,7 @@ def plot_calibrated_curve(scores: np.ndarray, calibrated_scores: np.ndarray,
     plt.show()
 
 
-def test_plot_calibrated_curve():
+def _test_plot_calibrated_curve():
     scores = np.array([0.1, 0.5, 0.8])
     calib_scores = np.array([0.2, 0.6, 0.7])
     plot_calibrated_curve(scores, calib_scores)
