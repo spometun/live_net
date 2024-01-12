@@ -13,7 +13,7 @@ from . import stat_utils
 importlib.reload(stat_utils)
 
 from . import optimizers
-importlib.reload(optimizer)
+importlib.reload(optimizers)
 
 from . import visual_utils
 importlib.reload(visual_utils)
@@ -33,8 +33,8 @@ importlib.reload(datasets)
 from . import nets
 importlib.reload(nets)
 
-from . import trainer
-importlib.reload(trainer)
+from . import net_trainer
+importlib.reload(net_trainer)
 
 from . import test_livenet
 importlib.reload(test_livenet)

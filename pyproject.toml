@@ -8,5 +8,5 @@ version="0.1"
 python_files = ["*.py"]
 log_cli = true
 # filterwarnings = ["ignore:::.*pytest*"]
-filterwarnings = ["ignore:::.*dateutil*"]
+filterwarnings = ["ignore:::.*dateutil*", "ignore:::.*importlib*"]
 

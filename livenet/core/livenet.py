@@ -221,7 +221,7 @@ class Context:
         self.random = random.Random(seed)
         self.n_params = 0
         self.learning_rate = None
-        self.optimizer_class = optimizer.AdamLiveNet
+        self.optimizer_class = optimizers.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.alpha_l1 = 0.0
         self.name_counters = {"S": 0, "D": 0, "N": 0}
