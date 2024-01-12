@@ -4,7 +4,7 @@ import pytest
 import torch
 import numpy as np
 
-from life.lib.simple_log import LOG
+from simple_log import LOG
 
 
 class IndexTakerGenerator:

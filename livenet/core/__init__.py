@@ -1,6 +1,6 @@
 import importlib
 
-from . import simple_log
+import simple_log
 importlib.reload(simple_log)
 
 from . import gen_utils
@@ -12,7 +12,7 @@ importlib.reload(graph)
 from . import stat_utils
 importlib.reload(stat_utils)
 
-from . import optimizer
+from . import optimizers
 importlib.reload(optimizer)
 
 from . import visual_utils

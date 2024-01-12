@@ -2,8 +2,7 @@ import typing
 
 import numpy as np
 import torch
-import life.lib as lib
-from life.lib.simple_log import LOG
+from simple_log import LOG
 
 
 class Trainer:
@@ -71,8 +70,8 @@ class Trainer:
             self.optimizer.learning_rate = new_lr
 
     def _on_epoch(self):
-        params = lib.utils.get_parameters_dict(self.network)
-        grads = lib.utils.get_gradients_dict(self.network)
+        params = core.utils.get_parameters_dict(self.network)
+        grads = core.utils.get_gradients_dict(self.network)
         epoch_loss_criterion = self.loss_criterion
         epoch_loss_network = self.loss_network
         good_ratio = self.counter_good / self.epoch_size

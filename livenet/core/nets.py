@@ -2,9 +2,8 @@ import math
 
 import torch
 from torch import nn as nn
-from life.lib.simple_log import LOG
-
-from life import lib as lib
+from simple_log import LOG
+from . import livenet, optimizers
 
 
 def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
@@ -108,7 +107,7 @@ class PERCEPTRON(torch.nn.Module):
 
 
 def create_livenet_odd(l1=0.0):
-    network = lib.livenet.LiveNet(1, 2, 1)
+    network = livenet.LiveNet(1, 2, 1)
     network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(10)
@@ -122,7 +121,7 @@ def create_livenet_odd(l1=0.0):
 
 
 def create_livenet_odd_2(context=None):
-    network = lib.livenet.LiveNet().create_perceptron(1, 2, 2, context)
+    network = livenet.LiveNet().create_perceptron(1, 2, 2, context)
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
         network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)
@@ -139,7 +138,7 @@ def create_livenet_odd_2(context=None):
 
 
 def create_livenet_pyramid():
-    network = lib.livenet.LiveNet(3, 2, 1)
+    network = livenet.LiveNet(3, 2, 1)
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(-10)
         network.inputs[0].axons[1].k[...] = torch.tensor(10)
@@ -157,7 +156,7 @@ def create_livenet_pyramid():
 
 
 def create_livenet_linear2(l1=0.0):
-    network = lib.livenet.LiveNet(2, 2, 2)
+    network = livenet.LiveNet(2, 2, 2)
     network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)
@@ -169,7 +168,7 @@ def create_livenet_linear2(l1=0.0):
 
 
 def create_livenet_linear3(l1=0.0):
-    network = lib.livenet.LiveNet(3, 2, 2)
+    network = livenet.LiveNet(3, 2, 2)
     network.context.alpha_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)
@@ -214,11 +213,11 @@ def livenet_perceptron(n_inputs, n_middle, n_outputs, context=None):
 def create_optimizer(net: torch.nn.Module):
     if net.__class__.__name__ == "LiveNet":
         print("LiveNet")
-        net: lib.livenet.LiveNet
-        optimizer = lib.optimizer.LiveNetOptimizer(net, lr=0.01)
+        net: livenet.LiveNet
+        optimizer = optimizer.LiveNetOptimizer(net, lr=0.01)
         # optimizer = torch.optim.Adam(net.parameters())
     else:
         print("Torch")
-        # optimizer = lib.optimizer.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
-        optimizer = lib.optimizer.optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
+        # optimizer = core.optimizer.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
+        optimizer = optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
     return optimizer

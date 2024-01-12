@@ -1,8 +1,8 @@
 import torch
 
-from life.lib.livenet import Context, RegularNeuron, DestinationNeuron
-import life.lib as lib
-from life.lib.simple_log import LOG, LOGD
+from .livenet import Context, RegularNeuron, DestinationNeuron
+from simple_log import LOG, LOGD
+from . import datasets, nets, gen_utils, optimizers, trainer, livenet
 
 
 def test_die():
@@ -21,14 +21,14 @@ def test_die():
 
 
 def test_system_die_all():
-    # lib.simple_log.level = lib.simple_log.LogLevel.DEBUG
-    train_x, train_y = lib.datasets.get_odd()
-    network = lib.nets.create_livenet_odd_2()
+    # core.simple_log.level = core.simple_log.LogLevel.DEBUG
+    train_x, train_y = datasets.get_odd()
+    network = nets.create_livenet_odd_2()
     network.context.alpha_l1 = 1.0  # big alpha will lead to quick death, even with big 'b'
-    batch_iterator = lib.gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
-    criterion = lib.nets.criterion_n
-    optimizer = lib.optimizer.LiveNetOptimizer(network, lr=0.02)
-    trainer = lib.trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
+    criterion = nets.criterion_n
+    optimizer = optimizer.LiveNetOptimizer(network, lr=0.02)
+    trainer = trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert network.context.death_stat.dangle_neurons == 2
     assert len(network.inputs[0].axons) == 0
@@ -37,16 +37,16 @@ def test_system_die_all():
 
 
 def test_system():
-    # lib.simple_log.level = lib.simple_log.LogLevel.DEBUG
-    train_x, train_y = lib.datasets.get_odd()
-    context = lib.livenet.Context()
+    # core.simple_log.level = core.simple_log.LogLevel.DEBUG
+    train_x, train_y = datasets.get_odd()
+    context = livenet.Context()
     context.liveness_die_after_n_sign_changes = 2
     context.alpha_l1 = 0.01
-    network = lib.nets.create_livenet_odd_2(context)
-    batch_iterator = lib.gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
-    criterion = lib.nets.criterion_n
-    optimizer = lib.optimizer.LiveNetOptimizer(network, lr=0.05)
-    trainer = lib.trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
+    network = nets.create_livenet_odd_2(context)
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
+    criterion = nets.criterion_n
+    optimizer = optimizer.LiveNetOptimizer(network, lr=0.05)
+    trainer = trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
     assert trainer.history[0]["loss"] > 0.04
