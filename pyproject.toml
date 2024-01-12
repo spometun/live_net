@@ -1,3 +1,7 @@
+[project]
+name="life"
+version="0.1"
+
 [tool.pytest.ini_options]
 # testpaths = ["./tests/unit"]
 # filterwarnings = ["ignore:::.*third_party_package.module:123", "ignore:::.*another_module*"]
