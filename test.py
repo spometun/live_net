@@ -1,8 +1,8 @@
 from matplotlib import pyplot as plt
 import matplotlib
 import numpy as np
-import livenet.core as lib
 from simple_log import LOG
+from . import core
 
 
 class C:
