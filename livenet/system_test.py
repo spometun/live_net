@@ -8,7 +8,7 @@ import importlib
 from . import core
 import typing
 importlib.reload(core)
-LOG = core.simple_log.LOG
+from simple_log import LOG
 import math
 from matplotlib import pyplot as plt
 import pytest
