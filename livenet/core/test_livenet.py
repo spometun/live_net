@@ -28,7 +28,7 @@ def test_system_die_all():
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_n
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
-    trainer = net_trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert network.context.death_stat.dangle_neurons == 2
     assert len(network.inputs[0].axons) == 0
@@ -46,7 +46,7 @@ def test_system():
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_n
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.05)
-    trainer = net_trainer.Trainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
     assert trainer.history[0]["loss"] > 0.04
