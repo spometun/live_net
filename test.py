@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import matplotlib
 import numpy as np
 from simple_log import LOG
-from . import core
+from . import livenet
 
 
 class C:
