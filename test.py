@@ -1,8 +1,10 @@
+print(f"package {__package__}")
 from matplotlib import pyplot as plt
 import matplotlib
 import numpy as np
-from simple_log import LOG
+#from simple_log import LOG
 from . import livenet
+core = livenet.core
 
 
 class C:
@@ -25,11 +27,11 @@ def test_vs():
 if __name__ == "__main__":
     x = np.arange(20)
     y = x * x
-    plt.ion()
+    # plt.ion()
     criterion = core.nets.criterion_n
     net = core.nets.PERCEPTRON(784, 2)
     # net = core.livenet.LiveNet(784, None, 2)
     sizes, times = core.utils.calc_batch_times(net, criterion, 4096)
-    plt.plot(sizes, times)
-    plt.grid()
+    # plt.plot(sizes, times)
+    # plt.grid()
     pass
