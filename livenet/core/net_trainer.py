@@ -6,7 +6,7 @@ from simple_log import LOG
 from . import utils
 
 
-class Trainer:
+class NetTrainer:
     def __init__(self, network: torch.nn.Module, batch_iterator: typing.Iterator,
                  criterion: typing.Callable, optimizer, epoch_size=1, adaptive_lr=False):
         self.network = network
