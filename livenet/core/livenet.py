@@ -159,6 +159,7 @@ class Synapse(GraphNode):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         self.source = source
         self.destination = destination
+        assert source.context == destination.context
         context = source.context
         self.context = context
         self.name = f"{source.name}->{destination.name}"
