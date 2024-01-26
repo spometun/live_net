@@ -1,3 +1,10 @@
+# PLAN:
+# 1. Create simple odd network, see how it trains, which neurons deid,
+# activations of those who remain, death sign stats, etc.
+# 2. Create downscaled CIFAR network, see how it trains, death, stats, etc.
+# 3. Refactor to have core + high-level structure
+# may be do 3. first, at least to 3. before improving/debugging deaths on 1. and 2.
+
 import copy
 import random
 import numpy as np
