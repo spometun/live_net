@@ -20,7 +20,7 @@ class LogLevel(Enum):
     ERROR = 3
 
 
-level = LogLevel(0)
+level = LogLevel(1)
 
 
 log_global_time = time.time()

@@ -28,10 +28,10 @@ class GraphNode:
         except AttributeError:
             name = "NoName"
         if id(self) in visited_ids:
-            LOGD(f"{name} already visited")
+            # LOGD(f"{name} already visited")
             return
 
-        LOGD(f"visiting {name}")
+        # LOGD(f"visiting {name}")
         function = getattr(self, function_name, None)
         if function is not None:
             function(*args)
