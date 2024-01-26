@@ -5,8 +5,8 @@ version="0.1"
 [tool.pytest.ini_options]
 #pythonpath = ["serhii_libs"]
 # testpaths = ["./tests/unit"]
-# filterwarnings = ["ignore:::.*third_party_package.module:123", "ignore:::.*another_module*"]
 python_files = ["*.py"]
 log_cli = true
 filterwarnings = ["ignore:::.*dateutil*", "ignore:::.*importlib*"]
+addopts = "--ignore ./old"
 
