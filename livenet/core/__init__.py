@@ -1,5 +1,3 @@
-import sys
-print(f"path {sys.path}")
 import importlib
 
 from . import gen_utils
