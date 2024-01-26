@@ -149,7 +149,8 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
     @override
     def die(self):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        super(RegularNeuron, self).die()
+        super(RegularNeuron, self).die()  # Will call .die() of DestinationNeuron,
+        # because it is first in inheritance list
 
 
 class Synapse(GraphNode):
@@ -204,8 +205,8 @@ class Synapse(GraphNode):
 
     def internal_loss(self, loss: ValueHolder):
         assert self.source is not None and self.destination is not None, "Internal error"
-        alpha_l1 = self.context.alpha_l1 * (1 + 0.1 * self.random_constant)
-        loss.value += alpha_l1 * torch.abs(self.k)
+        regularization_l1 = self.context.regularization_l1 * (1 + 0.1 * self.random_constant)
+        loss.value += regularization_l1 * torch.abs(self.k)
 
     def get_adjacent_nodes(self) -> List[GraphNode]:
         if self.source is not None:
@@ -224,7 +225,7 @@ class Context:
         self.learning_rate = None
         self.optimizer_class = optimizers.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
-        self.alpha_l1 = 0.0  # L1 regularization value
+        self.regularization_l1 = 0.0  # L1 regularization value
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
         self.tick: int = 0

@@ -25,7 +25,7 @@ def test_system_die_all():
     # simple_log.level = simple_log.LogLevel.DEBUG
     train_x, train_y = datasets.get_odd()
     network = nets.create_livenet_odd_2()
-    network.context.alpha_l1 = 1.  # big L1 regularization alpha will lead to quick death, even with big 'b'
+    network.context.regularization_l1 = 1.  # big L1 regularization alpha will lead to quick death, even with big 'b'
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_n
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
@@ -42,7 +42,7 @@ def test_system():
     train_x, train_y = datasets.get_odd()
     context = livenet.Context()
     context.liveness_die_after_n_sign_changes = 2
-    context.alpha_l1 = 0.01
+    context.regularization_l1 = 0.01
     network = nets.create_livenet_odd_2(context)
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_n
