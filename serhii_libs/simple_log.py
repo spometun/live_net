@@ -13,7 +13,6 @@ log_to_logger = False
 log_to_console = True
 
 
-
 class LogLevel(Enum):
     DEBUG = 0
     INFO = 1
@@ -21,7 +20,7 @@ class LogLevel(Enum):
     ERROR = 3
 
 
-level = LogLevel(1)
+level = LogLevel(0)
 
 
 log_global_time = time.time()
@@ -102,18 +101,19 @@ def _LOG(level, *args):
             logger.error(s)
 
 
-def LOG(*args):
-    if level == LogLevel.INFO or level == LogLevel.ERROR:
-        _LOG("I", *args)
-
-
 def LOGD(*args):
     if level == LogLevel.DEBUG:
         _LOG("D", *args)
 
 
+def LOG(*args):
+    if level == LogLevel.DEBUG or level == LogLevel.INFO:
+        _LOG("I", *args)
+
+
 def LOGW(*args):
-    _LOG("W", *args)
+    if level == LogLevel.DEBUG or level == LogLevel.INFO or level == LogLevel.WARNING:
+        _LOG("W", *args)
 
 
 def LOGE(*args):
