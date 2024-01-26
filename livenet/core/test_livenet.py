@@ -2,6 +2,7 @@ import torch
 
 from .livenet import Context, RegularNeuron, DestinationNeuron
 from simple_log import LOG, LOGD
+import simple_log
 from . import datasets, nets, gen_utils, optimizers, net_trainer, livenet
 
 
@@ -21,10 +22,10 @@ def test_die():
 
 
 def test_system_die_all():
-    # core.simple_log.level = core.simple_log.LogLevel.DEBUG
+    # simple_log.level = simple_log.LogLevel.DEBUG
     train_x, train_y = datasets.get_odd()
     network = nets.create_livenet_odd_2()
-    network.context.alpha_l1 = 1.0  # big alpha will lead to quick death, even with big 'b'
+    network.context.alpha_l1 = 1.  # big L1 regularization alpha will lead to quick death, even with big 'b'
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_n
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)

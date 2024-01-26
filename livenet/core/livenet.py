@@ -224,7 +224,7 @@ class Context:
         self.learning_rate = None
         self.optimizer_class = optimizers.AdamLiveNet
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
-        self.alpha_l1 = 0.0
+        self.alpha_l1 = 0.0  # L1 regularization value
         self.name_counters = {"S": 0, "D": 0, "N": 0}
         self.death_stat = DeathStat()
         self.tick: int = 0
