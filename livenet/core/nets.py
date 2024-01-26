@@ -38,7 +38,7 @@ class ODD(nn.Module):
         self.linear1 = nn.Linear(1, 2)
         self.relu = nn.ReLU()
         self.linear2 = nn.Linear(2, 1)
-        self.alpha_l1 = l1
+        self.regularization_l1 = l1
         with torch.no_grad():
             p = [p for p in self.linear1.parameters()]
             p[0][...] = torch.tensor([[10], [-10]])
@@ -58,7 +58,7 @@ class ODD(nn.Module):
         loss = torch.tensor(0.)
         for param in self.parameters():
             if len(param.shape) > 1:
-                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+                loss += self.regularization_l1 * torch.sum(torch.abs(param))
         return loss
 
 
@@ -87,7 +87,7 @@ class PYRAMID(torch.nn.Module):
 class PERCEPTRON(torch.nn.Module):
     def __init__(self, n_inputs, n_outputs, l1=0.0):
         super().__init__()
-        self.alpha_l1 = l1
+        self.regularization_l1 = l1
         self.linear1 = nn.Linear(n_inputs, n_outputs)
 
     def forward(self, input_):
@@ -102,13 +102,13 @@ class PERCEPTRON(torch.nn.Module):
         loss = torch.tensor(0.)
         for param in self.parameters():
             if len(param.shape) > 1:
-                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+                loss += self.regularization_l1 * torch.sum(torch.abs(param))
         return loss
 
 
 def create_livenet_odd(l1=0.0):
     network = livenet.LiveNet(1, 2, 1)
-    network.context.alpha_l1 = l1
+    network.context.regularization_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(10)
         network.inputs[0].axons[1].k[...] = torch.tensor(-10)
@@ -157,7 +157,7 @@ def create_livenet_pyramid():
 
 def create_livenet_linear2(l1=0.0):
     network = livenet.LiveNet(2, 2, 2)
-    network.context.alpha_l1 = l1
+    network.context.regularization_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)
         network.inputs[0].axons[1].k[...] = torch.tensor(0.)
@@ -169,7 +169,7 @@ def create_livenet_linear2(l1=0.0):
 
 def create_livenet_linear3(l1=0.0):
     network = livenet.LiveNet(3, 2, 2)
-    network.context.alpha_l1 = l1
+    network.context.regularization_l1 = l1
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(0.)
         network.inputs[0].axons[1].k[...] = torch.tensor(0.)
@@ -186,7 +186,7 @@ class LINEAR3(nn.Module):
     def __init__(self, l1=0.0):
         super(LINEAR3, self).__init__()
         self.linear1 = nn.Linear(3, 2)
-        self.alpha_l1 = l1
+        self.regularization_l1 = l1
         with torch.no_grad():
             p = [p for p in self.linear1.parameters()]
             p[0][...] = torch.tensor([[0., 0, 0],
@@ -202,7 +202,7 @@ class LINEAR3(nn.Module):
         loss = torch.tensor(0.)
         for param in self.parameters():
             if len(param.shape) > 1:
-                loss += self.alpha_l1 * torch.sum(torch.abs(param))
+                loss += self.regularization_l1 * torch.sum(torch.abs(param))
         return loss
     
     
