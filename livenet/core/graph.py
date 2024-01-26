@@ -14,9 +14,9 @@ class GraphNode:
     # A. Do not modify graph structure
     # or
     # B. Visited function may disconnect visited node (and may disconnect some or all of its children)
-    # siblings of visited node must be intact
+    # but siblings of visited node must be intact
     # or
-    # C. ... about creation ?
+    # C. ... what about creation ?
     def visit(self, function_name: str, *args):
         visited_ids = set()
         self._visit(function_name, args, visited_ids=visited_ids)
@@ -38,7 +38,7 @@ class GraphNode:
 
         visited_ids.add(id(self))
         # make a copy because self.get_adjacent_nodes() may change
-        # (some visited children  may be disconnected - and removed from adjacent during the visit)
+        # (some visited children may be disconnected - and removed from adjacent during the visit)
         adjacent_nodes = [node for node in self.get_adjacent_nodes()]
         for node in adjacent_nodes:
             node._visit(function_name, args, visited_ids=visited_ids)

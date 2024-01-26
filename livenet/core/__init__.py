@@ -1,39 +1,29 @@
-import importlib
-
 from . import gen_utils
-importlib.reload(gen_utils)
-
 from . import graph
-importlib.reload(graph)
-
 from . import stat_utils
-importlib.reload(stat_utils)
-
 from . import optimizers
-importlib.reload(optimizers)
-
 from . import visual_utils
-importlib.reload(visual_utils)
-
 from . import utils
-importlib.reload(utils)
-
 from . import death
-importlib.reload(death)
-
 from . import livenet
-importlib.reload(livenet)
-
 from . import datasets
-importlib.reload(datasets)
-
 from . import nets
-importlib.reload(nets)
-
 from . import net_trainer
-importlib.reload(net_trainer)
-
 from . import test_livenet
-importlib.reload(test_livenet)
 
 
+# this piece of code intended to assist work with ipython notebooks
+# it reloads all libs imported above
+# so if some libs where updated, change will be effective for notebook
+# use with caution - if one change class definition dynamically,
+# it may lead to undefined behaviour when interacts with older already created class' instances
+# but in most cases author found this reload works and very helpfull
+import re
+import importlib
+with open(__file__) as f:
+    content = f.read()
+imports = re.findall(r"^from\s+\.\s+import\s+\w+\s+", content, flags=re.MULTILINE)
+for entry in imports:
+    entry = ' '.join(entry.split())  # normalise spaces
+    package_name = entry[14:]  # omit 'from . import ' at beginning
+    exec(f"importlib.reload({package_name})")
