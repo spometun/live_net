@@ -133,6 +133,7 @@ def create_livenet_odd_2(context=None):
         network.inputs[0].axons[0].destination.axons[1].k[...] = torch.tensor(-1.2)
         network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(1.3)
         network.inputs[0].axons[1].destination.axons[1].k[...] = torch.tensor(-1)
+        network.inputs[0].axons[1].destination.axons[1].destination.b[...] = torch.tensor(0.5)
 
     return network
 

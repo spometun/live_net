@@ -30,7 +30,7 @@ def test_system_die_all():
     criterion = nets.criterion_n
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
-    trainer.step(401)
+    trainer.step(501)
     assert network.context.death_stat.dangle_neurons == 2
     assert len(network.inputs[0].axons) == 0
     assert len(network.outputs[0].dendrites) == 0
@@ -50,6 +50,6 @@ def test_system():
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(401)
     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
-    assert trainer.history[0]["loss"] > 0.04
-    assert trainer.history[-1]["loss"] < 0.02
+    assert trainer.history[0]["loss"] > 0.03
+    assert trainer.history[-1]["loss"] < 0.01
     assert trainer.history[-1]["loss_reg"] > 0.0
