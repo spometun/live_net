@@ -34,7 +34,7 @@ def test_dev():
     optimizer = core.optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = core.net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
     trainer.step(1001)
-    scores = nn.functional.softmax(network(train_x)).detach().numpy()
+    scores = nn.functional.softmax(network(train_x), dim=1).detach().numpy()
     LOG(scores)
     prediction = np.argmax(scores, axis=1)
     assert np.all(prediction == train_y.numpy().squeeze(1))
