@@ -1,5 +1,6 @@
 pytest
 torch
+torchvision
 scipy
 opencv-python
 overrides
