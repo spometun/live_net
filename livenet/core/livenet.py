@@ -17,10 +17,6 @@ from . import optimizers
 from . import utils
 
 
-def test_dev():
-    print("O merciful God")
-
-
 class Neuron(GraphNode):
     def __init__(self, context: "Context"):
         super().__init__()

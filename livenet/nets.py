@@ -4,6 +4,7 @@ import torch
 from torch import nn as nn
 from simple_log import LOG
 from .core import livenet, optimizers
+from .core.livenet import DestinationNeuron, DataNeuron, NodesHolder, RegularNeuron
 
 
 def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
@@ -16,6 +17,30 @@ def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
 def criterion_n(inputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
     labels = torch.squeeze(labels, 1)
     return nn.functional.cross_entropy(inputs, labels) / math.log(2)
+
+
+def create_perceptron(n_inputs, n_middle, n_outputs, context=None):
+    net = livenet.LiveNet()
+    if context is None:
+        context = livenet.Context()
+    context.module = net  # todo: not needed?
+    net.context = context
+    net.inputs = [DataNeuron(context) for _ in range(n_inputs)]
+    net.outputs = [DestinationNeuron(context, activation=None) for _ in range(n_outputs)]
+    net.root = NodesHolder("root", net.outputs)
+    if n_middle is None:
+        for input_ in net.inputs:
+            for output in net.outputs:
+                input_.connect_to(output)
+    else:
+        for i in range(n_middle):
+            neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
+            for input_ in net.inputs:
+                input_.connect_to(neuron)
+            for output in net.outputs:
+                output.connect_from(neuron)
+    net.root.visit("init_weight")
+    return net
 
 
 class XOR(nn.Module):

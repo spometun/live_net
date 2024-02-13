@@ -33,5 +33,6 @@ def test_dev():
     LOG(scores)
     prediction = np.argmax(scores, axis=1)
     assert np.all(prediction == train_y.numpy().squeeze(1))
+    assert len(list(network.parameters())) == 8
     # core.livenet.export_onnx(network, "/home/spometun/table/home/net.onnx")
 
