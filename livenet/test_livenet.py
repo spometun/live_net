@@ -1,9 +1,8 @@
 import torch
 
-from .livenet import Context, RegularNeuron, DestinationNeuron
-from simple_log import LOG, LOGD
-import simple_log
-from . import datasets, nets, gen_utils, optimizers, net_trainer, livenet
+from .core.livenet import Context, RegularNeuron, DestinationNeuron
+from .core import nets, gen_utils, optimizers, net_trainer, livenet
+from . import datasets
 
 
 def test_die():

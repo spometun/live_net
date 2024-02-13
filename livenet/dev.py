@@ -8,25 +8,19 @@
 # or cifar recognition with born/deaths,
 # add analog of batch norm (additive neuron for all dendrites, with trained additive constant)
 
-import copy
-import random
 import numpy as np
-import torch
 import torch.nn as nn
-import torch.utils.data
 import importlib
 from . import core
-import typing
-importlib.reload(core)
+from . import datasets
+
+# importlib.reload(core)
 from simple_log import LOG
-import math
-from matplotlib import pyplot as plt
-import pytest
 
 
 def test_dev():
     # simple_log.level = simple_log.LogLevel.DEBUG
-    train_x, train_y = core.datasets.get_odd()
+    train_x, train_y = datasets.get_odd()
     network = core.nets.create_livenet_odd_2()
     res = network(train_x)
     network.context.regularization_l1 = 0.05
