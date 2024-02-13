@@ -255,30 +255,6 @@ class LiveNet(nn.Module):
     def __init__(self):
         super().__init__()
 
-    @classmethod
-    def create_perceptron(cls, n_inputs, n_middle, n_outputs, context=None):
-        net = cls()
-        if context is None:
-            context = Context()
-        context.module = net  # todo: not needed?
-        net.context = context
-        net.inputs = [DataNeuron(context) for _ in range(n_inputs)]
-        net.outputs = [DestinationNeuron(context, activation=None) for _ in range(n_outputs)]
-        net.root = NodesHolder("root", net.outputs)
-        if n_middle is None:
-            for input_ in net.inputs:
-                for output in net.outputs:
-                    input_.connect_to(output)
-        else:
-            for i in range(n_middle):
-                neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
-                for input_ in net.inputs:
-                    input_.connect_to(neuron)
-                for output in net.outputs:
-                    output.connect_from(neuron)
-        net.root.visit("init_weight")
-        return net
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
         assert len(self.inputs) == x.shape[1]
@@ -317,19 +293,3 @@ def export_onnx(model: nn.Module, path):
 
 if __name__ == "__main__":
     utils.set_seed()
-    x = torch.tensor([[0., 0], [0, 1], [1, 0], [1, 1]])
-    net = LiveNet.create_perceptron(2, 4, 1)
-    net.context.reduce_sum_computation = True
-    net.forward(x)
-    net.forward(x)
-
-    LOG('a')
-    export_onnx(net, "/home/spometun/table/mu.onnx")
-    LOG('b')
-
-    p = [p for p in net.named_parameters()]
-    LOG(p)
-    LOG("Here")
-    # net = LiveNet(2, 1)
-
-
