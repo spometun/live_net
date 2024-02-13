@@ -3,7 +3,7 @@ import math
 import torch
 from torch import nn as nn
 from simple_log import LOG
-from . import livenet, optimizers
+from .core import livenet, optimizers
 
 
 def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:

@@ -8,7 +8,7 @@ import math
 import random
 
 from .death import LivenessObserver, DeathStat
-from .graph import GraphNode, NodesHolder
+from tools.graph import GraphNode, NodesHolder
 from .utils import ValueHolder
 
 

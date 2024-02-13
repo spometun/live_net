@@ -1,13 +1,7 @@
-from . import gen_utils
-from . import graph
-from . import stat_utils
 from . import optimizers
-from . import visual_utils
 from . import utils
 from . import death
 from . import livenet
-from . import nets
-from . import net_trainer
 
 # this piece of code intended to assist work with ipython notebooks
 # it reloads all libs imported above
@@ -21,6 +15,7 @@ with open(__file__) as f:
     content = f.read()
 imports = re.findall(r"^from\s+\.\s+import\s+\w+\s+", content, flags=re.MULTILINE)
 import importlib
+importlib.reload(importlib)  # make IDEs feel importlib is used
 for entry in imports:
     entry = ' '.join(entry.split())  # normalise spaces
     package_name = entry[14:]  # omit 'from . import ' at beginning

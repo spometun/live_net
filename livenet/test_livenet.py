@@ -1,7 +1,8 @@
 import torch
 
 from .core.livenet import Context, RegularNeuron, DestinationNeuron
-from .core import nets, gen_utils, optimizers, net_trainer, livenet
+from .core import optimizers, livenet
+from . import nets, gen_utils, net_trainer
 from . import datasets
 
 
