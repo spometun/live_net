@@ -5,16 +5,6 @@ from . import livenet
 core = livenet.core
 
 
-class C:
-    def __init__(self):
-        self.a1 = 9
-
-
-def f():
-    c = C()
-    LOG(f"{c.a2}")
-
-
 def test_vs():
     #plt.ion()
     print("hivs")
@@ -29,7 +19,7 @@ if __name__ == "__main__":
     criterion = livenet.nets.criterion_n
     net = livenet.nets.PERCEPTRON(784, 2)
     # net = core.livenet.LiveNet(784, None, 2)
-    sizes, times = core.utils.calc_batch_times(net, criterion, 4096)
+    sizes, times = livenet.utils.calc_batch_times(net, criterion, 4096)
     # plt.plot(sizes, times)
     # plt.grid()
     pass
