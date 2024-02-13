@@ -146,7 +146,7 @@ def create_livenet_odd(l1=0.0):
 
 
 def create_livenet_odd_2(context=None):
-    network = livenet.LiveNet().create_perceptron(1, 2, 2, context)
+    network = create_perceptron(1, 2, 2, context)
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
         network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)
