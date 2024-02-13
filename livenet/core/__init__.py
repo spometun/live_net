@@ -6,11 +6,8 @@ from . import visual_utils
 from . import utils
 from . import death
 from . import livenet
-from . import datasets
 from . import nets
 from . import net_trainer
-from . import test_livenet
-
 
 # this piece of code intended to assist work with ipython notebooks
 # it reloads all libs imported above
@@ -19,10 +16,11 @@ from . import test_livenet
 # it may lead to undefined behaviour when interacts with older already created class' instances
 # but in most cases author found this reload works and very helpfull
 import re
-import importlib
+
 with open(__file__) as f:
     content = f.read()
 imports = re.findall(r"^from\s+\.\s+import\s+\w+\s+", content, flags=re.MULTILINE)
+import importlib
 for entry in imports:
     entry = ' '.join(entry.split())  # normalise spaces
     package_name = entry[14:]  # omit 'from . import ' at beginning
