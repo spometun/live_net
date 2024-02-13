@@ -1,11 +1,12 @@
 # PLAN:
-# 1. Create simple odd network, see how it trains, which neurons deid,
-# activations of those who remain, death sign stats, etc.
 # 2. Create downscaled CIFAR network, see how it trains, death, stats, etc.
 # 3. Refactor to have core + high-level structure
 # may be do 3. first, at least to 3. before improving/debugging deaths on 1. and 2.
-# 4. Solve Context design and/or death logic design (what is provided into constructors) if needed
+# 4. Solve Context design and/or death logic (what required to die parameters) design (what is provided into constructors) if needed
 # 5. Provide OBSERVABILITY and after that/alongside with that conduct meaningful experiments
+# experiments could be: create binary number dynamic addition (?!),
+# or cifar recognition with born/deaths,
+# add analog of batch norm (additive neuron for all dendrites, with trained additive constant)
 
 import copy
 import random
