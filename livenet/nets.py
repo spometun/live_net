@@ -14,7 +14,9 @@ def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
     return torch.nn.functional.binary_cross_entropy(y_hat, label) / math.log(2)
 
 
-def criterion_n(inputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+def criterion_classification_n(inputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    # inputs - unnormalized logits (batch, n)
+    # labels - integer class indices in range [0...n-1]
     labels = torch.squeeze(labels, 1)
     return nn.functional.cross_entropy(inputs, labels) / math.log(2)
 

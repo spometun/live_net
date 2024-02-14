@@ -86,7 +86,7 @@ class NetTrainer:
                              "loss_reg": epoch_loss_network})
         msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
         # if epoch_loss_network != 0.0:
-        msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}"
+        msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}reg"
         msg += f" params={len(params)}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.4f}"
