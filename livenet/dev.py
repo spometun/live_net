@@ -18,14 +18,15 @@ from . import nets, gen_utils, net_trainer
 from simple_log import LOG
 
 
-def test_dev():
+def test_odd():
     # simple_log.level = simple_log.LogLevel.DEBUG
-    train_x, train_y = datasets.get_odd()
+    train_x, train_y = datasets.get_odd_2()
     network = nets.create_livenet_odd_2()
+    assert len(list(network.parameters())) == 10
     res = network(train_x)
     network.context.regularization_l1 = 0.05
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
-    criterion = nets.criterion_n
+    criterion = nets.criterion_classification_n
     optimizer = core.optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
     trainer.step(1001)

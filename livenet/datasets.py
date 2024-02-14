@@ -1,6 +1,9 @@
 import numpy as np
 import torch
 import torchvision
+import os
+
+datasets_dir = f"{os.getenv('HOME')}/datasets/research"
 
 
 def get_xor():
@@ -12,7 +15,7 @@ def get_xor():
     return xor_x, xor_y
 
 
-def get_odd():
+def get_odd_2():
     odd_x = torch.Tensor([[0.], [1.], [2.]])
     odd_y = torch.tensor([[0], [1], [0]])
     return odd_x, odd_y
@@ -49,7 +52,7 @@ def _get_mnist(train: bool):
         [torchvision.transforms.ToTensor()
             , torchvision.transforms.Normalize([0.5], [0.5])
          ])
-    dataset=torchvision.datasets.MNIST("/home/spometun/datasets/research", train=train,
+    dataset=torchvision.datasets.MNIST(datasets_dir, train=train,
                                     download=True, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
     whole = next(iter(loader))
@@ -72,7 +75,7 @@ def _get_cifar10(train: bool):
         [torchvision.transforms.ToTensor()
             , torchvision.transforms.Normalize([0.5], [0.5])
          ])
-    dataset=torchvision.datasets.CIFAR10("/home/sergiy/datasets/research", train=train,
+    dataset = torchvision.datasets.CIFAR10(datasets_dir, train=train,
                                        download=True, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
     whole = next(iter(loader))
