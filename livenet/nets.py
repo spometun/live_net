@@ -4,7 +4,8 @@ import torch
 from torch import nn as nn
 from simple_log import LOG
 from .core import livenet, optimizers
-from .core.livenet import DestinationNeuron, DataNeuron, NodesHolder, RegularNeuron
+from .core.livenet import DestinationNeuron, DataNeuron, RegularNeuron
+from .core.graph import NodesHolder
 
 
 def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:

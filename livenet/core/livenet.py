@@ -8,7 +8,7 @@ import math
 import random
 
 from .death import LivenessObserver, DeathStat
-from tools.graph import GraphNode, NodesHolder
+from .graph import GraphNode
 from .utils import ValueHolder
 
 
@@ -62,7 +62,7 @@ class SourceNeuron(Neuron):
         return synapse
 
     @override
-    def get_adjacent_nodes(self) -> List["GraphNode"]:
+    def get_adjacent_nodes(self) -> List[GraphNode]:
         return []
 
 
@@ -122,7 +122,7 @@ class DestinationNeuron(Neuron):
         self.context.remove_parameter(self.name)
 
     @override
-    def get_adjacent_nodes(self) -> List["GraphNode"]:
+    def get_adjacent_nodes(self) -> List[GraphNode]:
         return self.dendrites
 
 
