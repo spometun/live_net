@@ -1,6 +1,5 @@
 import typing
-from typing import List, Union
-from overrides import override
+from typing import List, Union, override
 import abc
 import torch
 import torch.nn as nn
@@ -78,8 +77,8 @@ class DestinationNeuron(Neuron):
         self.optimizer.step()
 
     def _compute_output(self) -> torch.Tensor:
-        outputs = [self.b]
         if self.context.reduce_sum_computation:
+            outputs = [self.b]
             for synapse in self.dendrites:
                 outputs.append(synapse.output())
             utils.broadcast_dimensions(outputs)
@@ -116,6 +115,7 @@ class DestinationNeuron(Neuron):
     @override
     def die(self):
         LOG(f"killing {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
+        # TODO: 'b' must be added to destination's b, or be close to zero, or handled somehow in other way
         while len(self.dendrites) > 0:
             self.dendrites[0].die()
         self.context.death_stat.off_dangle_neuron(self)

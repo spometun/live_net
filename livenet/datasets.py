@@ -93,7 +93,7 @@ def get_cifar10_train():
     return _get_cifar10(True)
 
 
-def to_plain(x, y, downscale=1, to_odd=False):
+def to_plain(x, y, downscale=1, to_odd=False, to_gray=False):
     if not isinstance(downscale, tuple):
         d = (downscale, downscale)
     else:
@@ -103,6 +103,8 @@ def to_plain(x, y, downscale=1, to_odd=False):
     assert n0 % d[0] == 0 and n1 % d[1] == 0
     x = x.reshape(x.shape[0], x.shape[1], n0 // d[0], d[0], n1 // d[1], d[1])
     x = x.mean(axis=(3, 5), keepdims=False)
+    if to_gray:
+        x = x.mean(axis=1, keepdims=False)
     x = x.reshape(len(x), -1)
     if to_odd:
         y = y % 2
