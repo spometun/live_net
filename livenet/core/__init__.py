@@ -4,6 +4,8 @@ from . import livenet
 from . import optimizers
 from . import utils
 
+utils.set_seed()
+
 # this piece of code intended to assist work with ipython notebooks
 # it reloads all libs imported above
 # so if some libs where updated, change will be effective for notebook
