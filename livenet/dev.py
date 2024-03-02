@@ -37,3 +37,23 @@ def test_odd():
     assert len(list(network.parameters())) == 8
     # core.livenet.export_onnx(network, "/home/spometun/table/home/net.onnx")
 
+
+def test_mnist_perceptron_die():
+    downscale = (7, 7)
+    train_x, train_y = datasets.to_plain(*datasets.get_mnist_train(), downscale=downscale, to_gray=True)
+    # simple_log.level = simple_log.LogLevel.DEBUG
+    network = nets.create_livenet_odd_2()
+    assert len(list(network.parameters())) == 10
+    res = network(train_x)
+    network.context.regularization_l1 = 0.05
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
+    criterion = nets.criterion_classification_n
+    optimizer = core.optimizers.LiveNetOptimizer(network, lr=0.02)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
+    trainer.step(1001)
+    scores = nn.functional.softmax(network(train_x), dim=1).detach().numpy()
+    LOG(scores)
+    prediction = np.argmax(scores, axis=1)
+    assert np.all(prediction == train_y.numpy().squeeze(1))
+    assert len(list(network.parameters())) == 8
+    # core.livenet.export_onnx(network, "/home/spometun/table/home/net.onnx")
