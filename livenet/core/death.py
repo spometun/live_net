@@ -46,9 +46,10 @@ class LivenessObserver:
         return -1
 
 
-class DeathStat:
+class HealthStat:
     def __init__(self):
         self.dangle_neurons: int = 0
+        self.useless_neurons: int = 0
 
     def on_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons += 1
@@ -57,3 +58,11 @@ class DeathStat:
     def off_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons -= 1
         assert self.dangle_neurons >= 0, "Internal error"
+
+    def on_useless_neuron(self, useless: "SourceNeuron"):
+        self.useless_neurons += 1
+        LOG(f"{useless.name} became useless, total useless = {self.useless_neurons}")
+
+    def off_useless_neuron(self, dangle: "SourceNeuron"):
+        self.useless_neurons -= 1
+        assert self.useless_neurons >= 0, "Internal error"

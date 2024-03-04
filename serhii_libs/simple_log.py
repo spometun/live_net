@@ -25,6 +25,7 @@ level = LogLevel(1)
 
 log_global_time = time.time()
 log_ipython_execution_count = -1
+log_log_count = 0
 
 
 class bcolors:
@@ -62,6 +63,7 @@ def _get_code_info():
 def _LOG(level, *args):
     _init()
     global log_global_time
+    global log_log_count
     # global log_ipython_execution_count
 
     # if log_global_time == 0.0:
@@ -81,6 +83,8 @@ def _LOG(level, *args):
     s = StringIO()
     print(f"{level}\u02c8{time_:.3f}", *args, location, end="", file=s)
     s = s.getvalue()
+    if log_log_count == 0:
+        s = "\n" + s
 
     if log_to_console:
         if level == "D" or level == "I":
@@ -99,6 +103,7 @@ def _LOG(level, *args):
             logger.warning(s)
         if level == "E":
             logger.error(s)
+    log_log_count += 1
 
 
 def LOGD(*args):
