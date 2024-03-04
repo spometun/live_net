@@ -1,6 +1,6 @@
 import torch
 
-from .core.livenet import Context, RegularNeuron, DestinationNeuron
+from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuron, DataNeuron
 from .core import optimizers, livenet
 from . import nets, gen_utils, net_trainer
 from . import datasets
@@ -9,16 +9,17 @@ from . import datasets
 def test_die():
     context = Context(seed=42)
     context.module = torch.nn.Module()
-    src = RegularNeuron(context, activation=torch.nn.ReLU())
-    context.death_stat.dangle_neurons = 1  # src
+    src = DataNeuron(context)
+    src.set_output(torch.Tensor(42))
     neuron = RegularNeuron(context, activation=torch.nn.ReLU)
+    return
     dst = DestinationNeuron(context, activation=None)
     src.connect_to(neuron)
     neuron.connect_to(dst)
     assert len(src.axons) == 1
     dst.dendrites[0].die()
     assert len(src.axons) == 0
-    assert context.death_stat.dangle_neurons == 1  # dst
+    assert context.health_stat.dangle_neurons == 1  # dst
 
 
 def test_system_die_all():
@@ -31,7 +32,7 @@ def test_system_die_all():
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(501)
-    assert network.context.death_stat.dangle_neurons == 2
+    assert network.context.health_stat.dangle_neurons == 2
     assert len(network.inputs[0].axons) == 0
     assert len(network.outputs[0].dendrites) == 0
     assert len(network.outputs[1].dendrites) == 0

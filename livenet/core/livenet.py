@@ -1,4 +1,5 @@
 import typing
+from abc import ABC
 from typing import List, Union, override
 import abc
 import torch
@@ -6,7 +7,7 @@ import torch.nn as nn
 import math
 import random
 
-from .death import LivenessObserver, DeathStat
+from .death import LivenessObserver, HealthStat
 from .graph import GraphNode
 from .utils import ValueHolder
 
@@ -18,10 +19,16 @@ from . import utils
 
 class Neuron(GraphNode):
     def __init__(self, context: "Context"):
+        LOG("Initializing Neuron")
+        assert context is not None
+        # _ = getattr(self, "context", None)
+        # if _ is not None:  # avoid calling __init__ more than once
+        #     LOG("already inited")
+        #     return
         super().__init__()
-        self.context = context
         self.name = context.get_name(type(self))
         self._output = None
+        self.context = context
 
     @typing.final
     def compute_output(self) -> torch.Tensor:
@@ -36,12 +43,13 @@ class Neuron(GraphNode):
     def _compute_output(self) -> torch.Tensor: ...
 
     def die(self):
-        LOGD(f"There is no death for {self.name}")
+        LOG(f"{self.name} die Neuron")
+        self.context.remove_parameter(self.name)
 
 
-# noinspection PyAbstractClass
-class SourceNeuron(Neuron):
+class SourceNeuron(Neuron, ABC):
     def __init__(self, context: "Context"):
+        LOG("Source neuron init")
         super().__init__(context)
         self.axons: List[Synapse] = []
 
@@ -53,7 +61,7 @@ class SourceNeuron(Neuron):
         assert synapse in self.axons, "Internal error"
         self.axons.remove(synapse)
         if len(self.axons) == 0:
-            LOG(f"{self.name} became useless at tick {self.context.tick}")
+            LOG(f"{self.name} became useless and will die at tick {self.context.tick}")
             self.die()
 
     def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
@@ -61,17 +69,19 @@ class SourceNeuron(Neuron):
         return synapse
 
     @override
-    def get_adjacent_nodes(self) -> List[GraphNode]:
-        return []
+    def die(self):
+        assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
 
 
 class DestinationNeuron(Neuron):
     def __init__(self, context: "Context", activation):
+        LOG("Destination neuron init")
         super().__init__(context)
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter(self.name)
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
         self.activation = activation
+        self.context.health_stat.on_dangle_neuron(self)
 
     def on_grad_update(self):
         self.optimizer.step()
@@ -106,36 +116,47 @@ class DestinationNeuron(Neuron):
         assert synapse in self.dendrites, "Internal error"
         self.dendrites.remove(synapse)
         if len(self.dendrites) == 0:
-            self.context.death_stat.on_dangle_neuron(self)
+            self.context.health_stat.on_dangle_neuron(self)
 
     def connect_from(self, source: SourceNeuron):  # high-level helper function
         synapse = Synapse(source, self)
         return synapse
 
     @override
-    def die(self):
-        LOG(f"killing {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
-        # TODO: 'b' must be added to destination's b, or be close to zero, or handled somehow in other way
-        while len(self.dendrites) > 0:
-            self.dendrites[0].die()
-        self.context.death_stat.off_dangle_neuron(self)
-        self.context.remove_parameter(self.name)
-
-    @override
     def get_adjacent_nodes(self) -> List[GraphNode]:
         return self.dendrites
+
+    @override
+    def die(self):
+        LOG(f"killing DestinationNeuron {self.name} with b={self.b.item():.3f}, tick={self.context.tick}")
+        # TODO: 'b' must be added to destination's b, or be close to zero, or handled somehow in other way
+        while len(self.dendrites) > 0:
+            self.dendrites[-1].die()
+        self.context.health_stat.off_dangle_neuron(self)
+        super(Neuron, self).die()
 
 
 class DataNeuron(SourceNeuron):
     def __init__(self, context: "Context"):
         super().__init__(context)
+        self.context.health_stat.on_useless_neuron(self)
 
     def set_output(self, value: torch.Tensor):
         # assert len(value.shape) == 1
         self._output = value
 
+    @override
     def _compute_output(self) -> torch.Tensor:
         raise RuntimeError("Should never be called")
+
+    @override
+    def get_adjacent_nodes(self) -> List[GraphNode]:
+        return []
+
+    @override
+    def die(self):
+        LOG(f"DataNeuron {self.name} death is no-op. +1 useless neuron")
+        self.context.health_stat.on_useless_neuron(self)
 
 
 class RegularNeuron(DestinationNeuron, SourceNeuron):
@@ -147,6 +168,11 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
         super(RegularNeuron, self).die()  # Will call .die() of DestinationNeuron,
         # because it is first in inheritance list
+
+    @override
+    def die(self):
+        super(SourceNeuron, self).die()
+        super(DestinationNeuron, self).die()
 
 
 class Synapse(GraphNode):
@@ -223,7 +249,7 @@ class Context:
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.regularization_l1 = 0.0  # L1 regularization value
         self.name_counters = {"S": 0, "D": 0, "N": 0}
-        self.death_stat = DeathStat()
+        self.health_stat = HealthStat()
         self.tick: int = 0
         self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False

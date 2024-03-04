@@ -5,7 +5,7 @@ import abc
 from simple_log import LOG, LOGD
 
 
-class GraphNode:
+class GraphNode(abc.ABC):
 
     @abc.abstractmethod
     def get_adjacent_nodes(self) -> List["GraphNode"]: ...
