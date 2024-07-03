@@ -52,9 +52,12 @@ class SourceNeuron(Neuron, ABC):
         LOG("Source neuron init")
         super().__init__(context)
         self.axons: List[Synapse] = []
+        self.context.health_stat.on_useless_neuron(self)
 
     def add_axon(self, synapse: "Synapse"):
         assert synapse not in self.axons, "Internal error"
+        if len(self.axons) == 0:
+            self.context.health_stat.off_useless_neuron(self)
         self.axons.append(synapse)
 
     def remove_axon(self, synapse: "Synapse"):
@@ -62,6 +65,7 @@ class SourceNeuron(Neuron, ABC):
         self.axons.remove(synapse)
         if len(self.axons) == 0:
             LOG(f"{self.name} became useless and will die at tick {self.context.tick}")
+            self.context.health_stat.on_useless_neuron(self)
             self.die()
 
     def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
@@ -70,7 +74,10 @@ class SourceNeuron(Neuron, ABC):
 
     @override
     def die(self):
+        LOG(f"killing SourceNeuron {self.name} tick={self.context.tick}")
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
+        self.context.health_stat.off_useless_neuron(self)
+        super().die()
 
 
 class DestinationNeuron(Neuron):
@@ -110,6 +117,8 @@ class DestinationNeuron(Neuron):
 
     def add_dendrite(self, synapse: "Synapse"):
         assert synapse not in self.dendrites, "Internal error"
+        if len(self.dendrites) == 0:
+            self.context.health_stat.off_dangle_neuron(self)
         self.dendrites.append(synapse)
 
     def remove_dendrite(self, synapse: "Synapse"):
@@ -117,6 +126,7 @@ class DestinationNeuron(Neuron):
         self.dendrites.remove(synapse)
         if len(self.dendrites) == 0:
             self.context.health_stat.on_dangle_neuron(self)
+            # TODO: Want to kill self safely (if it is possible, consider b)?
 
     def connect_from(self, source: SourceNeuron):  # high-level helper function
         synapse = Synapse(source, self)
@@ -133,15 +143,15 @@ class DestinationNeuron(Neuron):
         while len(self.dendrites) > 0:
             self.dendrites[-1].die()
         self.context.health_stat.off_dangle_neuron(self)
-        super(Neuron, self).die()
+        super().die()
 
 
 class DataNeuron(SourceNeuron):
     def __init__(self, context: "Context"):
         super().__init__(context)
-        self.context.health_stat.on_useless_neuron(self)
 
     def set_output(self, value: torch.Tensor):
+        assert value is not None, "Invalid input"
         # assert len(value.shape) == 1
         self._output = value
 
@@ -155,28 +165,16 @@ class DataNeuron(SourceNeuron):
 
     @override
     def die(self):
-        LOG(f"DataNeuron {self.name} death is no-op. +1 useless neuron")
-        self.context.health_stat.on_useless_neuron(self)
+        LOG(f"DataNeuron {self.name} death is no-op")
 
 
 class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
         super().__init__(context, activation)
 
-    @override
-    def die(self):
-        assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        super(RegularNeuron, self).die()  # Will call .die() of DestinationNeuron,
-        # because it is first in inheritance list
-
-    @override
-    def die(self):
-        super(SourceNeuron, self).die()
-        super(DestinationNeuron, self).die()
-
 
 class Synapse(GraphNode):
-    def __init__(self, source: SourceNeuron, destination: Union[DestinationNeuron, RegularNeuron]):
+    def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
         assert source != destination
         assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
