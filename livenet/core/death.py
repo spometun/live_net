@@ -56,27 +56,21 @@ class HealthStat:
         self.useless = set()
 
     def on_dangle_neuron(self, dangle: "DestinationNeuron"):
-        self.dangle_neurons += 1
-        LOG(f"{dangle.name} became dangle, total dangle = {self.dangle_neurons}")
+        LOG(f"{dangle.name} became dangle")
         assert dangle not in self.dangle
         self.dangle.add(dangle)
 
     def off_dangle_neuron(self, dangle: "DestinationNeuron"):
-        self.dangle_neurons -= 1
-        LOG(f"{dangle.name} is not dangle any more, total dangle = {self.dangle_neurons}")
-        assert self.dangle_neurons >= 0, "Internal error"
+        LOG(f"{dangle.name} is not dangle any more")
         self.dangle.remove(dangle)
 
     def on_useless_neuron(self, useless: "SourceNeuron"):
-        self.useless_neurons += 1
-        LOG(f"{useless.name} became useless, total useless = {self.useless_neurons}")
+        LOG(f"{useless.name} became useless")
         assert useless not in self.useless
         self.useless.add(useless)
 
     def off_useless_neuron(self, useless: "SourceNeuron"):
-        self.useless_neurons -= 1
-        LOG(f"{useless.name} is not useless any more, total useless = {self.useless_neurons}")
-        assert self.useless_neurons >= 0, "Internal error"
+        LOG(f"{useless.name} is not useless any more")
         self.useless.remove(useless)
 
     def get_stat(self) -> dict:
