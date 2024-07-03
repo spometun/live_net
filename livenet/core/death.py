@@ -57,12 +57,14 @@ class HealthStat:
 
     def off_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons -= 1
+        LOG(f"{dangle.name} is not dangle any more, total dangle = {self.dangle_neurons}")
         assert self.dangle_neurons >= 0, "Internal error"
 
     def on_useless_neuron(self, useless: "SourceNeuron"):
         self.useless_neurons += 1
         LOG(f"{useless.name} became useless, total useless = {self.useless_neurons}")
 
-    def off_useless_neuron(self, dangle: "SourceNeuron"):
+    def off_useless_neuron(self, useless: "SourceNeuron"):
         self.useless_neurons -= 1
+        LOG(f"{useless.name} is not useless any more, total useless = {self.useless_neurons}")
         assert self.useless_neurons >= 0, "Internal error"

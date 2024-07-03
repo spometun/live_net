@@ -32,10 +32,11 @@ def test_system_die_all():
     optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(501)
-    assert network.context.health_stat.dangle_neurons == 2
     assert len(network.inputs[0].axons) == 0
     assert len(network.outputs[0].dendrites) == 0
     assert len(network.outputs[1].dendrites) == 0
+    assert network.context.health_stat.dangle_neurons == 2
+    assert network.context.health_stat.useless_neurons == 1
 
 
 # def test_system():
