@@ -4,6 +4,7 @@ from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuro
 from .core import optimizers, livenet
 from . import nets, gen_utils, net_trainer
 from . import datasets
+from simple_log import LOG
 
 
 def test_die():
@@ -35,8 +36,11 @@ def test_system_die_all():
     assert len(network.inputs[0].axons) == 0
     assert len(network.outputs[0].dendrites) == 0
     assert len(network.outputs[1].dendrites) == 0
-    assert network.context.health_stat.dangle_neurons == 2
-    assert network.context.health_stat.useless_neurons == 1
+    stat = network.context.health_stat.get_stat()
+    assert stat["dangle"]["RegularNeuron"] == 0
+    assert stat["dangle"]["DestinationNeuron"] == 2
+    assert stat["useless"]["RegularNeuron"] == 0
+    assert stat["useless"]["DataNeuron"] == 1
 
 
 # def test_system():
