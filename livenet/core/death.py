@@ -49,22 +49,45 @@ class LivenessObserver:
 class HealthStat:
     def __init__(self):
         self.dangle_neurons: int = 0
+        self.dangle_destination_neurons: int = 0
         self.useless_neurons: int = 0
+        self.useless_data_neurons: int = 0
+        self.dangle = set()
+        self.useless = set()
 
     def on_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons += 1
         LOG(f"{dangle.name} became dangle, total dangle = {self.dangle_neurons}")
+        assert dangle not in self.dangle
+        self.dangle.add(dangle)
 
     def off_dangle_neuron(self, dangle: "DestinationNeuron"):
         self.dangle_neurons -= 1
         LOG(f"{dangle.name} is not dangle any more, total dangle = {self.dangle_neurons}")
         assert self.dangle_neurons >= 0, "Internal error"
+        self.dangle.remove(dangle)
 
     def on_useless_neuron(self, useless: "SourceNeuron"):
         self.useless_neurons += 1
         LOG(f"{useless.name} became useless, total useless = {self.useless_neurons}")
+        assert useless not in self.useless
+        self.useless.add(useless)
 
     def off_useless_neuron(self, useless: "SourceNeuron"):
         self.useless_neurons -= 1
         LOG(f"{useless.name} is not useless any more, total useless = {self.useless_neurons}")
         assert self.useless_neurons >= 0, "Internal error"
+        self.useless.remove(useless)
+
+    def get_stat(self) -> dict:
+        stat = {
+            "dangle": {"RegularNeuron": 0, "DestinationNeuron": 0},
+            "useless": {"RegularNeuron": 0, "DataNeuron": 0}
+        }
+        for neuron in self.dangle:
+            class_name = neuron.__class__.__name__
+            stat["dangle"][class_name] += 1
+        for neuron in self.useless:
+            class_name = neuron.__class__.__name__
+            stat["useless"][class_name] += 1
+        return stat
