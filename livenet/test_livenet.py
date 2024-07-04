@@ -8,7 +8,8 @@ from simple_log import LOG
 
 
 def test_die():
-    context = Context(seed=42)
+    module = torch.nn.Module()
+    context = Context(module, seed=42)
     context.module = torch.nn.Module()
     src = DataNeuron(context)
     src.set_output(torch.Tensor(42))

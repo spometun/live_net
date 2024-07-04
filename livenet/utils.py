@@ -3,7 +3,7 @@ import time
 from typing import Callable
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 
 
 def get_parameters_dict(network: torch.nn.Module, clone=True):
@@ -50,3 +50,8 @@ def calc_batch_times(network: torch.nn.Module,
             else:
                 batch_size = batch_size // 3 * 4
     return sizes, times
+
+
+def export_onnx(model: nn.Module, path):
+    dummy_input = torch.zeros((1, *model.input_shape()))
+    torch.onnx.export(model, dummy_input, path, verbose=False)

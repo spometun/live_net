@@ -43,8 +43,7 @@ def test_mnist_perceptron_die():
     downscale = (14, 14)
     train_x, train_y = datasets.to_plain(*datasets.get_mnist_train(), downscale=downscale, to_odd=True,
                                          to_gray=True)
-    context = core.livenet.Context()
-    network = nets.create_perceptron(train_x.shape[1], 2, 2, context)
+    network = nets.create_perceptron(train_x.shape[1], 2, 2)
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=1000)
     criterion = nets.criterion_classification_n
     optimizer = nets.create_optimizer(network)
