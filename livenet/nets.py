@@ -22,14 +22,10 @@ def criterion_classification_n(inputs: torch.Tensor, labels: torch.Tensor) -> to
     return nn.functional.cross_entropy(inputs, labels) / math.log(2)
 
 
-def create_perceptron(n_inputs, n_middle, n_outputs, context=None):
+def create_perceptron(n_inputs, n_middle, n_outputs):
     net = livenet.LiveNet()
-    if context is None:
-        context = livenet.Context()
-    context.module = net  # todo: not needed?
-    net.context = context
-    net.inputs = [DataNeuron(context) for _ in range(n_inputs)]
-    net.outputs = [DestinationNeuron(context, activation=None) for _ in range(n_outputs)]
+    net.inputs = [DataNeuron(net.context) for _ in range(n_inputs)]
+    net.outputs = [DestinationNeuron(net.context, activation=None) for _ in range(n_outputs)]
     net.root = NodesHolder("root", net.outputs)
     if n_middle is None:
         for input_ in net.inputs:
@@ -134,22 +130,22 @@ class PERCEPTRON(torch.nn.Module):
         return loss
 
 
-def create_livenet_odd(l1=0.0):
-    network = livenet.LiveNet(1, 2, 1)
-    network.context.regularization_l1 = l1
-    with torch.no_grad():
-        network.inputs[0].axons[0].k[...] = torch.tensor(10)
-        network.inputs[0].axons[1].k[...] = torch.tensor(-10)
-        network.inputs[0].axons[0].destination.b[...] = torch.tensor(-15)
-        network.inputs[0].axons[1].destination.b[...] = torch.tensor(2)
-        network.inputs[0].axons[0].destination.axons[0].k[...] = torch.tensor(-1)
-        network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(-1)
-        network.inputs[0].axons[1].destination.axons[0].destination.b[...] = torch.tensor(1)
-    return network
+# def create_livenet_odd(l1=0.0):
+#     network = livenet.LiveNet(1, 2, 1)
+#     network.context.regularization_l1 = l1
+#     with torch.no_grad():
+#         network.inputs[0].axons[0].k[...] = torch.tensor(10)
+#         network.inputs[0].axons[1].k[...] = torch.tensor(-10)
+#         network.inputs[0].axons[0].destination.b[...] = torch.tensor(-15)
+#         network.inputs[0].axons[1].destination.b[...] = torch.tensor(2)
+#         network.inputs[0].axons[0].destination.axons[0].k[...] = torch.tensor(-1)
+#         network.inputs[0].axons[1].destination.axons[0].k[...] = torch.tensor(-1)
+#         network.inputs[0].axons[1].destination.axons[0].destination.b[...] = torch.tensor(1)
+#     return network
+#
 
-
-def create_livenet_odd_2(context=None):
-    network = create_perceptron(1, 2, 2, context)
+def create_livenet_odd_2():
+    network = create_perceptron(1, 2, 2)
     with torch.no_grad():
         network.inputs[0].axons[0].k[...] = torch.tensor(2.2)
         network.inputs[0].axons[1].k[...] = torch.tensor(-2.1)

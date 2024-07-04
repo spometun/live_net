@@ -238,8 +238,8 @@ class Synapse(GraphNode):
 
 
 class Context:
-    def __init__(self, seed=0):
-        self.module = None
+    def __init__(self, module: nn.Module, seed=0):
+        self.module = module
         self.random = random.Random(seed)
         self.n_params = 0
         self.learning_rate = None
@@ -278,6 +278,7 @@ class Context:
 class LiveNet(nn.Module):
     def __init__(self):
         super().__init__()
+        self.context = Context(self)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
@@ -308,11 +309,6 @@ class LiveNet(nn.Module):
 
     def input_shape(self):
         return torch.Size([len(self.inputs)])
-
-
-def export_onnx(model: nn.Module, path):
-    dummy_input = torch.zeros((1, *model.input_shape()))
-    torch.onnx.export(model, dummy_input, path, verbose=False)
 
 
 if __name__ == "__main__":
