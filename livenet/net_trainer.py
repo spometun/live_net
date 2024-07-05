@@ -3,7 +3,7 @@ import typing
 import numpy as np
 import torch
 
-from simple_log import LOG
+from ai_libs.simple_log import LOG
 from . import utils
 
 

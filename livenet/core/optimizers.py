@@ -1,6 +1,6 @@
 from typing import Optional
 import torch
-from simple_log import LOG
+from ai_libs.simple_log import LOG
 import math
 
 

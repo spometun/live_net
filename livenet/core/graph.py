@@ -2,7 +2,7 @@ import pytest
 from typing import List
 import abc
 
-from simple_log import LOG, LOGD
+from ai_libs.simple_log import LOG, LOGD
 
 
 class GraphNode(abc.ABC):

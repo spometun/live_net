@@ -4,7 +4,7 @@ import collections
 
 import numpy as np
 
-from simple_log import LOG, LOGD
+from ai_libs.simple_log import LOG, LOGD
 
 
 class LivenessObserver:
