@@ -15,7 +15,7 @@ from . import datasets
 from . import nets, gen_utils, net_trainer
 
 # importlib.reload(core)
-from simple_log import LOG
+from ai_libs.simple_log import LOG
 
 
 def test_odd():

@@ -4,7 +4,7 @@ from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuro
 from .core import optimizers, livenet
 from . import nets, gen_utils, net_trainer
 from . import datasets
-from simple_log import LOG
+from ai_libs.simple_log import LOG
 
 
 def test_die():

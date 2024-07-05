@@ -1,6 +1,6 @@
 print(f"package {__package__}")
 import numpy as np
-from simple_log import LOG
+from ai_libs.simple_log import LOG
 from . import livenet
 core = livenet.core
 

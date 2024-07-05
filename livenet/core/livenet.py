@@ -12,7 +12,7 @@ from .graph import GraphNode
 from .utils import ValueHolder
 
 
-from simple_log import LOG, LOGD
+from ai_libs.simple_log import LOG, LOGD
 from . import optimizers
 from . import utils
 

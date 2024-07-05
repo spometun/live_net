@@ -6,3 +6,4 @@ scipy
 opencv-python
 matplotlib
 onnx
+more_itertools

@@ -20,12 +20,11 @@ class LogLevel(Enum):
     ERROR = 3
 
 
-level = LogLevel(1)
+level = LogLevel(0)
 
 
 log_global_time = time.time()
 log_ipython_execution_count = -1
-log_log_count = 0
 
 
 class bcolors:
@@ -55,19 +54,14 @@ _init()
 
 
 def _get_code_info():
-    frame1 = sys._getframe(1)
-    frame3 = sys._getframe(3)
+    frame1 = sys._getframe(2)
+    frame3 = sys._getframe(4)
     return frame1.f_code.co_filename, frame3.f_code.co_filename, frame3.f_lineno
 
 
-def _LOG(level, *args):
+def _get_log_text(*args):
     _init()
     global log_global_time
-    global log_log_count
-    # global log_ipython_execution_count
-
-    # if log_global_time == 0.0:
-    #     log_global_time = time.time()
 
     time_ = time.time() - log_global_time
     this_filename, caller_filename, caller_lineno = _get_code_info()
@@ -80,30 +74,40 @@ def _LOG(level, *args):
     if is_pycharm_ipython_match is not None:
         location = ""
 
-    s = StringIO()
-    print(f"{level}\u02c8{time_:.3f}", *args, location, end="", file=s)
-    s = s.getvalue()
-    if log_log_count == 0:
-        s = "\n" + s
+    text = StringIO()
+    print(f"\u02c8{time_:.3f}", *args, location, end="", file=text)
+    text = text.getvalue()
+    return text
+
+
+def get_log_text(*args):
+    # ensure function call depth the same as if call LOG()
+    def f():
+        return _get_log_text(*args)
+    return f()
+
+
+def _LOG(level, *args):
+    text = _get_log_text(*args)
+    text = f"{level}{text}"
 
     if log_to_console:
         if level == "D" or level == "I":
-            print(s, file=sys.stdout)
+            print(text, file=sys.stdout)
         elif level == "W":
-            print(f"{bcolors.WARNING}{s}{bcolors.ENDC}", file=sys.stdout)
+            print(f"{bcolors.WARNING}{text}{bcolors.ENDC}", file=sys.stdout)
         else:
-            print(f"{bcolors.ERROR}{s}{bcolors.ENDC}", file=sys.stderr)
+            print(f"{bcolors.ERROR}{text}{bcolors.ENDC}", file=sys.stderr)
 
     if log_to_logger:
         if level == "D":
-            logger.debug(s)
+            logger.debug(text)
         if level == "I":
-            logger.info(s)
+            logger.info(text)
         if level == "W":
-            logger.warning(s)
+            logger.warning(text)
         if level == "E":
-            logger.error(s)
-    log_log_count += 1
+            logger.error(text)
 
 
 def LOGD(*args):
