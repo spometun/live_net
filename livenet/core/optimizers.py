@@ -21,7 +21,7 @@ class MyOptimizer(torch.optim.Optimizer):
             p.data.add_(p.grad.data, alpha=-self._lr)
 
 
-class SGDLiveNet:
+class SGDForParameter:
     def __init__(self, parameter: torch.Tensor, context):
         self.parameter = parameter
         self.context = context
@@ -36,7 +36,7 @@ class SGDLiveNet:
             self.parameter += -lr * self.parameter.grad
 
 
-class AdamLiveNet:
+class AdamForParameter:
     def __init__(self, parameter: torch.Tensor, context,
                  betas: tuple, epsilon=1e-8):
         self.parameter = parameter

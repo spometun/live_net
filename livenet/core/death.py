@@ -61,7 +61,7 @@ class HealthStat:
         self.dangle.add(dangle)
 
     def off_dangle_neuron(self, dangle: "DestinationNeuron"):
-        LOG(f"{dangle.name} is not dangle any more")
+        LOGD(f"{dangle.name} is not dangle any more")
         self.dangle.remove(dangle)
 
     def on_useless_neuron(self, useless: "SourceNeuron"):
@@ -70,7 +70,7 @@ class HealthStat:
         self.useless.add(useless)
 
     def off_useless_neuron(self, useless: "SourceNeuron"):
-        LOG(f"{useless.name} is not useless any more")
+        LOGD(f"{useless.name} is not useless any more")
         self.useless.remove(useless)
 
     def get_stat(self) -> dict:
