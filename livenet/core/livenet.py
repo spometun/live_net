@@ -19,7 +19,7 @@ from . import utils
 
 class Neuron(GraphNode):
     def __init__(self, context: "Context"):
-        LOG("Initializing Neuron")
+        LOGD("Initializing Neuron")
         assert context is not None
         # _ = getattr(self, "context", None)
         # if _ is not None:  # avoid calling __init__ more than once
@@ -49,7 +49,7 @@ class Neuron(GraphNode):
 
 class SourceNeuron(Neuron, ABC):
     def __init__(self, context: "Context"):
-        LOG("Source neuron init")
+        LOGD("Source neuron init")
         super().__init__(context)
         self.axons: List[Synapse] = []
         self.context.health_stat.on_useless_neuron(self)
@@ -82,7 +82,7 @@ class SourceNeuron(Neuron, ABC):
 
 class DestinationNeuron(Neuron):
     def __init__(self, context: "Context", activation):
-        LOG("Destination neuron init")
+        LOGD("Destination neuron init")
         super().__init__(context)
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter(self.name)
@@ -243,7 +243,7 @@ class Context:
         self.random = random.Random(seed)
         self.n_params = 0
         self.learning_rate = None
-        self.optimizer_class = optimizers.AdamLiveNet
+        self.optimizer_class = optimizers.AdamForParameter
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.regularization_l1 = 0.0  # L1 regularization value
         self.name_counters = {"S": 0, "D": 0, "N": 0}
