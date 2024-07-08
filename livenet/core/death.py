@@ -27,7 +27,7 @@ class LivenessObserver:
             self.sign_history.popleft()
             self.sign_history.append(self.context.tick)
         self.last_sign = sign
-        if x <= self.threshold:
+        if abs(x) <= self.threshold:
             self.n_small += 1
         else:
             self.n_small = 0
