@@ -60,3 +60,35 @@ def test_system_die_all():
 #     assert trainer.history[0]["loss"] > 0.03
 #     assert trainer.history[-1]["loss"] < 0.01
 #     assert trainer.history[-1]["loss_reg"] > 0.0
+
+
+def _build_symmetric_dangle_net():
+    net = livenet.LiveNet()
+    net.outputs += [DestinationNeuron(net.context, activation=None), DestinationNeuron(net.context, activation=None)]
+    net.inputs += [DataNeuron(net.context)]
+    neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
+    neuron.connect_to(net.outputs[0])
+    neuron.connect_to(net.outputs[1])
+    # net.inputs[0].connect_to(neuron)
+    net.root.visit("init_weight")
+    # with torch.no_grad():
+    #     net.outputs[0].b[...] = 14.0
+    #     net.outputs[1].b[...] = -14.1
+    #     neuron.b[...] = 20.0
+    #     neuron.axons[0].k[...] = 10.0
+    #     neuron.axons[1].k[...] = -10.1
+    return net
+
+
+def test_dangle_symmetric_die():
+    train_x, train_y = datasets.get_odd_2()
+    network = _build_symmetric_dangle_net()
+    # train_x is not actually used as networks input doesn't connected to anything
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=3)
+    criterion = nets.criterion_classification_n
+    optimizer = nets.create_optimizer(network)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
+    network.context.regularization_l1 = 0.001
+    optimizer.learning_rate = 0.01
+    trainer.step(5000)
+    assert len(list(network.parameters())) == 2

@@ -8,7 +8,7 @@ import math
 import random
 
 from .death import LivenessObserver, HealthStat
-from .graph import GraphNode
+from .graph import GraphNode, NodesHolder
 from .utils import ValueHolder
 
 
@@ -21,10 +21,6 @@ class Neuron(GraphNode):
     def __init__(self, context: "Context"):
         LOGD("Initializing Neuron")
         assert context is not None
-        # _ = getattr(self, "context", None)
-        # if _ is not None:  # avoid calling __init__ more than once
-        #     LOG("already inited")
-        #     return
         super().__init__()
         self.name = context.get_name(type(self))
         self._output = None
@@ -279,6 +275,9 @@ class LiveNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.context = Context(self)
+        self.inputs: list[SourceNeuron] = []
+        self.outputs: list[DestinationNeuron] = []
+        self.root = NodesHolder("root", self.outputs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
