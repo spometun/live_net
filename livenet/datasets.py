@@ -16,7 +16,7 @@ def get_xor():
 
 
 def get_odd_2():
-    odd_x = torch.Tensor([[0.], [1.], [2.]])
+    odd_x = torch.tensor([[0.], [1.], [2.]])
     odd_y = torch.tensor([[0], [1], [0]])
     return odd_x, odd_y
 

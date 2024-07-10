@@ -58,6 +58,8 @@ class AdamForParameter:
             self.parameter.grad.zero_()
 
     def step(self):
+        if not self.parameter.requires_grad:
+            return
         with torch.no_grad():
             lr = self.context.learning_rate
             self.t += 1

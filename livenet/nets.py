@@ -24,9 +24,8 @@ def criterion_classification_n(inputs: torch.Tensor, labels: torch.Tensor) -> to
 
 def create_perceptron(n_inputs, n_middle, n_outputs):
     net = livenet.LiveNet()
-    net.inputs = [DataNeuron(net.context) for _ in range(n_inputs)]
-    net.outputs = [DestinationNeuron(net.context, activation=None) for _ in range(n_outputs)]
-    net.root = NodesHolder("root", net.outputs)
+    net.inputs += [DataNeuron(net.context) for _ in range(n_inputs)]
+    net.outputs += [DestinationNeuron(net.context, activation=None) for _ in range(n_outputs)]
     if n_middle is None:
         for input_ in net.inputs:
             for output in net.outputs:
