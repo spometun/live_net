@@ -292,7 +292,7 @@ class LiveNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
         assert len(self.inputs) == x.shape[1]
-        self.root.visit("clear_output")
+        self.root.visit_member("clear_output")
         for i in range(x.shape[1]):
             self.inputs[i].set_output(x[:, i: i + 1])
         outputs = [o.compute_output() for o in self.outputs]
@@ -302,18 +302,15 @@ class LiveNet(nn.Module):
 
     def internal_loss(self):
         loss = ValueHolder(torch.tensor(0.0))
-        self.root.visit("internal_loss", loss)
+        self.root.visit_member("internal_loss", loss)
         return loss.value
-
-    def visit(self, func):
-        self.root.visit(func)
 
     def zero_grad(self, set_to_none: bool = True):
         assert set_to_none is False  # this parameter only to match torch nn.Module zero_grad interface
-        self.root.visit("zero_grad")
+        self.root.visit_member("zero_grad")
 
     def on_grad_update(self):
-        self.root.visit("on_grad_update")
+        self.root.visit_member("on_grad_update")
         self.context.tick += 1
 
     def input_shape(self):
