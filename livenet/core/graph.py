@@ -1,3 +1,6 @@
+import keyword
+import typing
+
 import pytest
 from typing import List, Callable
 import abc
@@ -17,38 +20,19 @@ class GraphNode(abc.ABC):
     # but siblings of visited node must be intact
     # or
     # C. ... what about creation ?
-    # TODO: remove visit in favor of apply_func? then may be rename -> apply_func -> visit
-    def visit(self, function_name: str, *args):
-        visited_ids = set()
-        self._visit(function_name, args, visited_ids=visited_ids)
-        del visited_ids
 
-    def _visit(self, function_name: str, args: tuple, visited_ids: set):
-        try:
-            name = self.name
-        except AttributeError:
-            name = "NoName"
-        if id(self) in visited_ids:
-            # LOGD(f"{name} already visited")
-            return
-
-        # LOGD(f"visiting {name}")
-        function = getattr(self, function_name, None)
-        if function is not None:
-            function(*args)
-
-        visited_ids.add(id(self))
-        # make a copy because self.get_adjacent_nodes() may change
-        # (some visited children may be disconnected - and removed from adjacent during the visit)
-        adjacent_nodes = [node for node in self.get_adjacent_nodes()]
-        for node in adjacent_nodes:
-            node._visit(function_name, args, visited_ids=visited_ids)
-
-    def apply_func(self, function: Callable):
-        # "function" must accept single argument - node object (which is derived from GraphNode)
+    @typing.final
+    def visit_func(self, function: Callable):
+        # "function" must accept single argument - node object (is derived from GraphNode)
         visited_ids = set()
         self._apply_func(function, visited_ids=visited_ids)
         del visited_ids
+
+    @typing.final
+    def visit_member(self, member_name: str, *args, **kwargs):
+        # calls member_name(*args, **kwargs) on all objects which have member_name defined
+        func = get_call_member_func_if_exists(member_name, *args, **kwargs)
+        self.visit_func(func)
 
     def _apply_func(self, function: Callable, visited_ids: set):
         if id(self) in visited_ids:
@@ -60,6 +44,17 @@ class GraphNode(abc.ABC):
         adjacent_nodes = [node for node in self.get_adjacent_nodes()]
         for node in adjacent_nodes:
             node._apply_func(function, visited_ids=visited_ids)
+
+
+def get_call_member_func_if_exists(member_name: str, *args, **kwargs):
+    assert member_name.isidentifier() and not keyword.iskeyword(member_name), f"Invalid input member name {member_name}"
+
+    def impl(obj):
+        function = getattr(obj, member_name, None)
+        if function is not None:
+            function(*args, **kwargs)
+
+    return impl
 
 
 class NodesHolder(GraphNode):
@@ -101,9 +96,9 @@ def test_graph():
     def call_func_member(obj):
         obj.func()
 
-    n5.apply_func(call_func_member)
+    n5.visit_func(call_func_member)
     assert GL._call_counter == 5
-    n5.apply_func(call_func_member)
+    n5.visit_func(get_call_member_func_if_exists("func"))
     assert GL._call_counter == 10
 
     v = [0]
@@ -111,7 +106,7 @@ def test_graph():
     def call_summator(obj):
         obj.summator(v)
 
-    n5.apply_func(call_summator)
+    n5.visit_member("summator", v)
     assert v[0] == 15
 
 
@@ -120,8 +115,21 @@ def test_except():
         def get_adjacent_nodes(self) -> List["GraphNode"]:
             return []
         def f(self):
-            v = self.__dict__["ku43"]
+            v = self.ku43
+        def g(self):
+            pass
 
     node = N()
-    with pytest.raises(KeyError):
-        node.visit("f")
+    node.visit_member("g")
+    with pytest.raises(AttributeError):
+        node.visit_member("f")
+
+    with pytest.raises(AssertionError):
+        node.visit_member("mu.bu")
+
+    with pytest.raises(AssertionError):
+        node.visit_member("for")
+
+    with pytest.raises(AssertionError):
+        node.visit_member("3ku")
+
