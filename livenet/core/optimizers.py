@@ -55,7 +55,8 @@ class AdamForParameter:
 
     def zero_grad(self):
         with torch.no_grad():
-            self.parameter.grad.zero_()
+            if self.parameter.grad is not None:
+                self.parameter.grad.zero_()
 
     def step(self):
         if not self.parameter.requires_grad:

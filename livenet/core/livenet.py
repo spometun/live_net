@@ -11,7 +11,6 @@ from .death import LivenessObserver, HealthStat
 from .graph import GraphNode, NodesHolder
 from .utils import ValueHolder
 
-
 from ai_libs.simple_log import LOG, LOGD
 from . import optimizers
 from . import utils
@@ -86,6 +85,11 @@ class DestinationNeuron(Neuron):
         self.activation = activation
         self.context.health_stat.on_dangle_neuron(self)
 
+    @override
+    def zero_grad(self):
+        self.optimizer.zero_grad()
+
+    @override
     def on_grad_update(self):
         self.optimizer.step()
 
@@ -187,12 +191,18 @@ class Synapse(GraphNode):
         source.add_axon(self)
         destination.add_dendrite(self)
 
+    @override
     def init_weight(self):
         assert self.source is not None and self.destination is not None, "Internal error"
         v = math.sqrt(1 / len(self.destination.dendrites))
         with torch.no_grad():
             self.k[...] = self.context.random.uniform(-v, v)
 
+    @override
+    def zero_grad(self):
+        self.optimizer.zero_grad()
+
+    @override
     def on_grad_update(self):
         assert self.source is not None and self.destination is not None, "Internal error"
         self.optimizer.step()
@@ -251,7 +261,7 @@ class Context:
     def get_name(self, cls):
         match cls.__name__:
             case "RegularNeuron":
-               key = "N"
+                key = "N"
             case "DataNeuron":
                 key = "S"
             case "DestinationNeuron":
@@ -299,8 +309,8 @@ class LiveNet(nn.Module):
         self.root.visit(func)
 
     def zero_grad(self, set_to_none: bool = True):
-        assert set_to_none is False
-        self.root.visit("optimizer.zero_grad")
+        assert set_to_none is False  # this parameter only to match torch nn.Module zero_grad interface
+        self.root.visit("zero_grad")
 
     def on_grad_update(self):
         self.root.visit("on_grad_update")
