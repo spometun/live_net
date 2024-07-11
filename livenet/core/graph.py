@@ -1,5 +1,5 @@
 import pytest
-from typing import List
+from typing import List, Callable
 import abc
 
 from ai_libs.simple_log import LOG, LOGD
@@ -17,6 +17,7 @@ class GraphNode(abc.ABC):
     # but siblings of visited node must be intact
     # or
     # C. ... what about creation ?
+    # TODO: remove visit in favor of apply_func? then may be rename -> apply_func -> visit
     def visit(self, function_name: str, *args):
         visited_ids = set()
         self._visit(function_name, args, visited_ids=visited_ids)
@@ -42,6 +43,23 @@ class GraphNode(abc.ABC):
         adjacent_nodes = [node for node in self.get_adjacent_nodes()]
         for node in adjacent_nodes:
             node._visit(function_name, args, visited_ids=visited_ids)
+
+    def apply_func(self, function: Callable):
+        # "function" must accept single argument - node object (which is derived from GraphNode)
+        visited_ids = set()
+        self._apply_func(function, visited_ids=visited_ids)
+        del visited_ids
+
+    def _apply_func(self, function: Callable, visited_ids: set):
+        if id(self) in visited_ids:
+            return
+        function(self)
+        visited_ids.add(id(self))
+        # make a copy because self.get_adjacent_nodes() may change
+        # (some visited children may be disconnected - and removed from adjacent during the visit)
+        adjacent_nodes = [node for node in self.get_adjacent_nodes()]
+        for node in adjacent_nodes:
+            node._apply_func(function, visited_ids=visited_ids)
 
 
 class NodesHolder(GraphNode):
@@ -79,13 +97,21 @@ def test_graph():
     n3 = GL([n1, n2], 3)
     n4 = GL([n1, n2], 4)
     n5 = GL([n3, n4], 5)
-    n5.visit("func")
+
+    def call_func_member(obj):
+        obj.func()
+
+    n5.apply_func(call_func_member)
     assert GL._call_counter == 5
-    n5.visit("func")
+    n5.apply_func(call_func_member)
     assert GL._call_counter == 10
 
     v = [0]
-    n5.visit("summator", v)
+
+    def call_summator(obj):
+        obj.summator(v)
+
+    n5.apply_func(call_summator)
     assert v[0] == 15
 
 
