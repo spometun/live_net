@@ -21,7 +21,7 @@ def test_die():
     assert len(src.axons) == 1
     dst.dendrites[0].die()
     assert len(src.axons) == 0
-    assert context.health_stat.dangle_neurons == 1  # dst
+    assert context.topology_stat.dangle_neurons == 1  # dst
 
 
 def test_system_die_all():
@@ -37,7 +37,7 @@ def test_system_die_all():
     assert len(network.inputs[0].axons) == 0
     assert len(network.outputs[0].dendrites) == 0
     assert len(network.outputs[1].dendrites) == 0
-    stat = network.context.health_stat.get_stat()
+    stat = network.context.topology_stat.get_stat()
     assert stat["dangle"]["RegularNeuron"] == 0
     assert stat["dangle"]["DestinationNeuron"] == 2
     assert stat["useless"]["RegularNeuron"] == 0

@@ -3,6 +3,8 @@ import torch
 from ai_libs.simple_log import LOG
 import math
 
+from livenet.core.observability import LifeStatContributor
+
 
 class MyOptimizer(torch.optim.Optimizer):
     def __init__(self, parameters, lr=0.01):
@@ -36,10 +38,11 @@ class SGDForParameter:
             self.parameter += -lr * self.parameter.grad
 
 
-class AdamForParameter:
+class AdamForParameter(LifeStatContributor):
     def __init__(self, parameter: torch.Tensor, context,
                  betas: tuple, epsilon=1e-8):
         self.parameter = parameter
+        self.name = parameter.livenet_name
         self.context = context
         self.t = 0
         self.b1t = 1.
@@ -59,6 +62,7 @@ class AdamForParameter:
                 self.parameter.grad.zero_()
 
     def step(self):
+        self.add_life_stat_entry("parameter", self.parameter)
         if not self.parameter.requires_grad:
             return
         with torch.no_grad():
@@ -68,11 +72,14 @@ class AdamForParameter:
             self.b2t *= self.b2
             g = self.parameter.grad
             assert math.isfinite(g)
+            self.add_life_stat_entry("gradient", g)
             self.mt = self.b1 * self.mt + (1 - self.b1) * g
             self.vt = self.b2 * self.vt + (1 - self.b2) * (g * g)
             mt = self.mt / (1 - self.b1t)
             vt = self.vt / (1 - self.b2t)
-            self.parameter += -lr * mt / (torch.sqrt(vt) + self.epsilon)
+            delta = -lr * mt / (torch.sqrt(vt) + self.epsilon)
+            self.add_life_stat_entry("delta", delta)
+            self.parameter += delta
             assert math.isfinite(self.parameter.item())
 
 
