@@ -1,13 +1,15 @@
 import typing
+from typing import Any
 from abc import ABC
-from typing import List, Union, override
+from typing import List, override
 import abc
 import torch
 import torch.nn as nn
 import math
 import random
 
-from .death import LivenessObserver, HealthStat
+from .death import LivenessObserver
+from livenet.core.observability import TopologyStat, LifeStatContributor
 from .graph import GraphNode, NodesHolder
 from .utils import ValueHolder
 
@@ -16,7 +18,7 @@ from . import optimizers
 from . import utils
 
 
-class Neuron(GraphNode):
+class Neuron(GraphNode, LifeStatContributor):
     def __init__(self, context: "Context"):
         LOGD("Initializing Neuron")
         assert context is not None
@@ -29,6 +31,7 @@ class Neuron(GraphNode):
     def compute_output(self) -> torch.Tensor:
         if self._output is None:
             self._output = self._compute_output()
+            self.add_life_stat_entry("output", self._output)
         return self._output
 
     def clear_output(self):
@@ -47,12 +50,12 @@ class SourceNeuron(Neuron, ABC):
         LOGD("Source neuron init")
         super().__init__(context)
         self.axons: List[Synapse] = []
-        self.context.health_stat.on_useless_neuron(self)
+        self.context.topology_stat.on_useless_neuron(self)
 
     def add_axon(self, synapse: "Synapse"):
         assert synapse not in self.axons, "Internal error"
         if len(self.axons) == 0:
-            self.context.health_stat.off_useless_neuron(self)
+            self.context.topology_stat.off_useless_neuron(self)
         self.axons.append(synapse)
 
     def remove_axon(self, synapse: "Synapse"):
@@ -60,7 +63,7 @@ class SourceNeuron(Neuron, ABC):
         self.axons.remove(synapse)
         if len(self.axons) == 0:
             LOG(f"{self.name} became useless and will die at tick {self.context.tick}")
-            self.context.health_stat.on_useless_neuron(self)
+            self.context.topology_stat.on_useless_neuron(self)
             self.die()
 
     def connect_to(self, destination: "DestinationNeuron"):  # high-level helper function
@@ -71,7 +74,7 @@ class SourceNeuron(Neuron, ABC):
     def die(self):
         LOG(f"killing SourceNeuron {self.name} tick={self.context.tick}")
         assert len(self.axons) == 0, "Internal error: Wouldn't kill neuron with at least one axon alive"
-        self.context.health_stat.off_useless_neuron(self)
+        self.context.topology_stat.off_useless_neuron(self)
         super().die()
 
 
@@ -83,7 +86,7 @@ class DestinationNeuron(Neuron):
         self.b = context.obtain_float_parameter(self.name)
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
         self.activation = activation
-        self.context.health_stat.on_dangle_neuron(self)
+        self.context.topology_stat.on_dangle_neuron(self)
 
     @override
     def zero_grad(self):
@@ -118,14 +121,14 @@ class DestinationNeuron(Neuron):
     def add_dendrite(self, synapse: "Synapse"):
         assert synapse not in self.dendrites, "Internal error"
         if len(self.dendrites) == 0:
-            self.context.health_stat.off_dangle_neuron(self)
+            self.context.topology_stat.off_dangle_neuron(self)
         self.dendrites.append(synapse)
 
     def remove_dendrite(self, synapse: "Synapse"):
         assert synapse in self.dendrites, "Internal error"
         self.dendrites.remove(synapse)
         if len(self.dendrites) == 0:
-            self.context.health_stat.on_dangle_neuron(self)
+            self.context.topology_stat.on_dangle_neuron(self)
             # TODO: Want to kill self safely (if it is possible, consider b)?
 
     def connect_from(self, source: SourceNeuron):  # high-level helper function
@@ -142,7 +145,7 @@ class DestinationNeuron(Neuron):
         # TODO: 'b' must be added to destination's b, or be close to zero, or handled somehow in other way
         while len(self.dendrites) > 0:
             self.dendrites[-1].die()
-        self.context.health_stat.off_dangle_neuron(self)
+        self.context.topology_stat.off_dangle_neuron(self)
         super().die()
 
 
@@ -173,7 +176,7 @@ class RegularNeuron(DestinationNeuron, SourceNeuron):
         super().__init__(context, activation)
 
 
-class Synapse(GraphNode):
+class Synapse(GraphNode, LifeStatContributor):
     def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
         assert source != destination
         assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
@@ -190,6 +193,7 @@ class Synapse(GraphNode):
         self.liveness_observer = LivenessObserver(context)
         source.add_axon(self)
         destination.add_dendrite(self)
+        self.prev_tick_output = context.tick - 1
 
     @override
     def init_weight(self):
@@ -226,7 +230,10 @@ class Synapse(GraphNode):
 
     def output(self):
         assert self.source is not None and self.destination is not None, "Internal error"
+        assert self.context.tick == self.prev_tick_output + 1, f"Output computation is not consequent {self.prev_tick_output} -> {self.context.tick}"
+        self.prev_tick_output = self.context.tick
         output = self.k * self.source.compute_output()
+        self.add_life_stat_entry("output", output)
         return output
 
     def internal_loss(self, loss: ValueHolder):
@@ -253,7 +260,8 @@ class Context:
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.regularization_l1 = 0.0  # L1 regularization value
         self.name_counters = {"S": 0, "D": 0, "N": 0}
-        self.health_stat = HealthStat()
+        self.topology_stat = TopologyStat()
+        self.life_stat: list[dict[str, Any]] = []
         self.tick: int = 0
         self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False
@@ -275,6 +283,7 @@ class Context:
     def obtain_float_parameter(self, name: str) -> nn.Parameter:
         param = nn.Parameter(torch.tensor(0.0))
         self.module.register_parameter(name, param)
+        param.livenet_name = name
         return param
 
     def remove_parameter(self, name: str):
@@ -285,7 +294,7 @@ class LiveNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.context = Context(self)
-        self.inputs: list[SourceNeuron] = []
+        self.inputs: list[DataNeuron] = []
         self.outputs: list[DestinationNeuron] = []
         self.root = NodesHolder("root", self.outputs)
 

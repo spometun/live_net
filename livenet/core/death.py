@@ -1,10 +1,7 @@
 import math
-import dataclasses
 import collections
 
-import numpy as np
-
-from ai_libs.simple_log import LOG, LOGD
+from ai_libs.simple_log import LOGD
 
 
 class LivenessObserver:
@@ -46,42 +43,3 @@ class LivenessObserver:
         return -1
 
 
-class HealthStat:
-    def __init__(self):
-        self.dangle_neurons: int = 0
-        self.dangle_destination_neurons: int = 0
-        self.useless_neurons: int = 0
-        self.useless_data_neurons: int = 0
-        self.dangle = set()
-        self.useless = set()
-
-    def on_dangle_neuron(self, dangle: "DestinationNeuron"):
-        LOG(f"{dangle.name} became dangle")
-        assert dangle not in self.dangle
-        self.dangle.add(dangle)
-
-    def off_dangle_neuron(self, dangle: "DestinationNeuron"):
-        LOGD(f"{dangle.name} is not dangle any more")
-        self.dangle.remove(dangle)
-
-    def on_useless_neuron(self, useless: "SourceNeuron"):
-        LOG(f"{useless.name} became useless")
-        assert useless not in self.useless
-        self.useless.add(useless)
-
-    def off_useless_neuron(self, useless: "SourceNeuron"):
-        LOGD(f"{useless.name} is not useless any more")
-        self.useless.remove(useless)
-
-    def get_stat(self) -> dict:
-        stat = {
-            "dangle": {"RegularNeuron": 0, "DestinationNeuron": 0},
-            "useless": {"RegularNeuron": 0, "DataNeuron": 0}
-        }
-        for neuron in self.dangle:
-            class_name = neuron.__class__.__name__
-            stat["dangle"][class_name] += 1
-        for neuron in self.useless:
-            class_name = neuron.__class__.__name__
-            stat["useless"][class_name] += 1
-        return stat
