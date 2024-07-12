@@ -1,6 +1,6 @@
 import torch
 
-from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuron, DataNeuron
+from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuron, InputNeuron
 from .core import optimizers, livenet
 from . import nets, gen_utils, net_trainer
 from . import datasets
@@ -11,7 +11,7 @@ def test_die():
     module = torch.nn.Module()
     context = Context(module, seed=42)
     context.module = torch.nn.Module()
-    src = DataNeuron(context)
+    src = InputNeuron(context)
     src.set_output(torch.Tensor(42))
     neuron = RegularNeuron(context, activation=torch.nn.ReLU)
     return
@@ -65,7 +65,7 @@ def test_system_die_all():
 def _build_symmetric_dangle_net():
     net = livenet.LiveNet()
     net.outputs += [DestinationNeuron(net.context, activation=None), DestinationNeuron(net.context, activation=None)]
-    net.inputs += [DataNeuron(net.context)]
+    net.inputs += [InputNeuron(net.context)]
     neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
     neuron.connect_to(net.outputs[0])
     neuron.connect_to(net.outputs[1])

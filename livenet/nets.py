@@ -4,7 +4,7 @@ import torch
 from torch import nn as nn
 from ai_libs.simple_log import LOG
 from .core import livenet, optimizers
-from .core.livenet import DestinationNeuron, DataNeuron, RegularNeuron
+from .core.livenet import DestinationNeuron, InputNeuron, RegularNeuron
 from .core.graph import NodesHolder
 
 
@@ -24,7 +24,7 @@ def criterion_classification_n(inputs: torch.Tensor, labels: torch.Tensor) -> to
 
 def create_perceptron(n_inputs, n_middle, n_outputs):
     net = livenet.LiveNet()
-    net.inputs += [DataNeuron(net.context) for _ in range(n_inputs)]
+    net.inputs += [InputNeuron(net.context) for _ in range(n_inputs)]
     net.outputs += [DestinationNeuron(net.context, activation=None) for _ in range(n_outputs)]
     if n_middle is None:
         for input_ in net.inputs:

@@ -18,37 +18,47 @@ from . import optimizers
 from . import utils
 
 
-class Neuron(GraphNode, LifeStatContributor):
-    def __init__(self, context: "Context"):
+class NeuralBase(GraphNode, LifeStatContributor):
+    def __init__(self, context: "Context", only_one_output_request=False):
         LOGD("Initializing Neuron")
         assert context is not None
         super().__init__()
-        self.name = context.get_name(type(self))
         self._output = None
         self.context = context
+        self.only_one_output_request = only_one_output_request
+        self.name: str = None
 
     @typing.final
     def compute_output(self) -> torch.Tensor:
+        if self.only_one_output_request:
+            assert self._output is None, f"Internal error. Called compute_output on {self.__class__.__name__} more than once"
         if self._output is None:
             self._output = self._compute_output()
             self.add_life_stat_entry("output", self._output)
         return self._output
 
+    @typing.final
     def clear_output(self):
         self._output = None
 
     @abc.abstractmethod
     def _compute_output(self) -> torch.Tensor: ...
 
+    def zero_grad(self): ...
+
+    def on_grad_update(self): ...
+
+    def init_weight(self): ...
+
     def die(self):
-        LOG(f"{self.name} die Neuron")
+        LOG(f"{self.name} die BaseNeural")
         self.context.remove_parameter(self.name)
 
 
-class SourceNeuron(Neuron, ABC):
+class SourceNeuron(NeuralBase, ABC):
     def __init__(self, context: "Context"):
-        LOGD("Source neuron init")
         super().__init__(context)
+        LOGD("Source neuron init")
         self.axons: List[Synapse] = []
         self.context.topology_stat.on_useless_neuron(self)
 
@@ -78,10 +88,11 @@ class SourceNeuron(Neuron, ABC):
         super().die()
 
 
-class DestinationNeuron(Neuron):
+class DestinationNeuron(NeuralBase):
     def __init__(self, context: "Context", activation):
-        LOGD("Destination neuron init")
         super().__init__(context)
+        self.name = context.get_name("D")
+        LOGD(f"Destination neuron init {self.name}")
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter(self.name)
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
@@ -96,11 +107,12 @@ class DestinationNeuron(Neuron):
     def on_grad_update(self):
         self.optimizer.step()
 
+    @override
     def _compute_output(self) -> torch.Tensor:
         if self.context.reduce_sum_computation:
             outputs = [self.b]
             for synapse in self.dendrites:
-                outputs.append(synapse.output())
+                outputs.append(synapse.compute_output())
             utils.broadcast_dimensions(outputs)
             ndim = len(outputs[0].shape)
             if ndim == 0:
@@ -113,7 +125,7 @@ class DestinationNeuron(Neuron):
         else:
             output = self.b
             for synapse in self.dendrites:
-                output = output + synapse.output()
+                output = output + synapse.compute_output()
         if self.activation is not None:
             output = self.activation(output)
         return output
@@ -149,9 +161,11 @@ class DestinationNeuron(Neuron):
         super().die()
 
 
-class DataNeuron(SourceNeuron):
+class InputNeuron(SourceNeuron):
     def __init__(self, context: "Context"):
         super().__init__(context)
+        self.name = context.get_name("I")
+        LOGD(f"InputNeuron init {self.name}")
 
     def set_output(self, value: torch.Tensor):
         assert value is not None, "Invalid input"
@@ -168,23 +182,26 @@ class DataNeuron(SourceNeuron):
 
     @override
     def die(self):
-        LOG(f"DataNeuron {self.name} death is no-op")
+        LOG(f"InputNeuron {self.name} death is no-op")
 
 
+# todo: make all __init__ args kwargs for more flexible inheritance options
 class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
-        super().__init__(context, activation)
+        super().__init__(context=context, activation=activation)
+        self.name = context.get_name("N")
 
 
-class Synapse(GraphNode, LifeStatContributor):
+class Synapse(NeuralBase):
     def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
+        assert source.context == destination.context
+        context = source.context
+        super().__init__(context=context, only_one_output_request=True)
         assert source != destination
         assert source not in (synapse.source for synapse in destination.dendrites), "Connection already exists"
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         self.source = source
         self.destination = destination
-        assert source.context == destination.context
-        context = source.context
         self.context = context
         self.name = f"{source.name}->{destination.name}"
         self.k = context.obtain_float_parameter(self.name)
@@ -193,9 +210,7 @@ class Synapse(GraphNode, LifeStatContributor):
         self.liveness_observer = LivenessObserver(context)
         source.add_axon(self)
         destination.add_dendrite(self)
-        self.prev_tick_output = context.tick - 1
 
-    @override
     def init_weight(self):
         assert self.source is not None and self.destination is not None, "Internal error"
         v = math.sqrt(1 / len(self.destination.dendrites))
@@ -226,14 +241,12 @@ class Synapse(GraphNode, LifeStatContributor):
         self.source = None
         dst.remove_dendrite(self)
         src.remove_axon(self)
-        self.context.remove_parameter(self.name)
+        super().die()
 
-    def output(self):
+    @override
+    def _compute_output(self):
         assert self.source is not None and self.destination is not None, "Internal error"
-        assert self.context.tick == self.prev_tick_output + 1, f"Output computation is not consequent {self.prev_tick_output} -> {self.context.tick}"
-        self.prev_tick_output = self.context.tick
         output = self.k * self.source.compute_output()
-        self.add_life_stat_entry("output", output)
         return output
 
     def internal_loss(self, loss: ValueHolder):
@@ -259,23 +272,16 @@ class Context:
         self.optimizer_class = optimizers.AdamForParameter
         self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
         self.regularization_l1 = 0.0  # L1 regularization value
-        self.name_counters = {"S": 0, "D": 0, "N": 0}
+        self.name_counters = {}
         self.topology_stat = TopologyStat()
         self.life_stat: list[dict[str, Any]] = []
         self.tick: int = 0
         self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False
 
-    def get_name(self, cls):
-        match cls.__name__:
-            case "RegularNeuron":
-                key = "N"
-            case "DataNeuron":
-                key = "S"
-            case "DestinationNeuron":
-                key = "D"
-            case _:
-                assert False, "Internal error"
+    def get_name(self, key: str):
+        if key not in self.name_counters.keys():
+            self.name_counters[key] = 0
         res = f"{key}{self.name_counters[key]}"
         self.name_counters[key] += 1
         return res
@@ -294,7 +300,7 @@ class LiveNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.context = Context(self)
-        self.inputs: list[DataNeuron] = []
+        self.inputs: list[InputNeuron] = []
         self.outputs: list[DestinationNeuron] = []
         self.root = NodesHolder("root", self.outputs)
 
