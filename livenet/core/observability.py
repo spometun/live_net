@@ -31,7 +31,7 @@ class TopologyStat:
     def get_stat(self) -> dict:
         stat = {
             "dangle": {"RegularNeuron": 0, "DestinationNeuron": 0},
-            "useless": {"RegularNeuron": 0, "DataNeuron": 0}
+            "useless": {"RegularNeuron": 0, "InputNeuron": 0}
         }
         for neuron in self.dangle:
             class_name = neuron.__class__.__name__

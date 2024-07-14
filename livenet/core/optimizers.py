@@ -62,25 +62,24 @@ class AdamForParameter(LifeStatContributor):
                 self.parameter.grad.zero_()
 
     def step(self):
+        if self.parameter.requires_grad:
+            with torch.no_grad():
+                lr = self.context.learning_rate
+                self.t += 1
+                self.b1t *= self.b1
+                self.b2t *= self.b2
+                g = self.parameter.grad
+                assert math.isfinite(g)
+                self.add_life_stat_entry("gradient", g)
+                self.mt = self.b1 * self.mt + (1 - self.b1) * g
+                self.vt = self.b2 * self.vt + (1 - self.b2) * (g * g)
+                mt = self.mt / (1 - self.b1t)
+                vt = self.vt / (1 - self.b2t)
+                delta = -lr * mt / (torch.sqrt(vt) + self.epsilon)
+                self.add_life_stat_entry("delta", delta)
+                self.parameter += delta
+                assert math.isfinite(self.parameter.item())
         self.add_life_stat_entry("parameter", self.parameter)
-        if not self.parameter.requires_grad:
-            return
-        with torch.no_grad():
-            lr = self.context.learning_rate
-            self.t += 1
-            self.b1t *= self.b1
-            self.b2t *= self.b2
-            g = self.parameter.grad
-            assert math.isfinite(g)
-            self.add_life_stat_entry("gradient", g)
-            self.mt = self.b1 * self.mt + (1 - self.b1) * g
-            self.vt = self.b2 * self.vt + (1 - self.b2) * (g * g)
-            mt = self.mt / (1 - self.b1t)
-            vt = self.vt / (1 - self.b2t)
-            delta = -lr * mt / (torch.sqrt(vt) + self.epsilon)
-            self.add_life_stat_entry("delta", delta)
-            self.parameter += delta
-            assert math.isfinite(self.parameter.item())
 
 
 def optimizer_with_lr_property(opt_class: torch.optim.Optimizer, *args, **kwargs):
