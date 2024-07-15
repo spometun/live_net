@@ -238,10 +238,10 @@ def create_optimizer(net: torch.nn.Module):
     if net.__class__.__name__ == "LiveNet":
         print("LiveNet")
         net: livenet.LiveNet
-        optimizer = optimizers.LiveNetOptimizer(net, lr=0.01)
+        optimizer = optimizers.optimizers.LiveNetOptimizer(net, lr=0.01)
         # optimizer = torch.optim.Adam(net.parameters())
     else:
         print("Torch")
-        optimizer = optimizers.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
+        optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
         # optimizer = optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
     return optimizer
