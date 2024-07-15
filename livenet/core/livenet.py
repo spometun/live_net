@@ -269,8 +269,10 @@ class Context:
         self.random = random.Random(seed)
         self.n_params = 0
         self.learning_rate = None
-        self.optimizer_class = optimizers.AdamForParameter
-        self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
+        # self.optimizer_class = optimizers.optimizers.AdamForParameter
+        # self.optimizer_init_kwargs = {"betas": (0.0, 0.95)}
+        self.optimizer_class = optimizers.optimizers.AdStepParameter
+        self.optimizer_init_kwargs = {"window_length": 20}
         self.regularization_l1 = 0.0  # L1 regularization value
         self.name_counters = {}
         self.topology_stat = TopologyStat()

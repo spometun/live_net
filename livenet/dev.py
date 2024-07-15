@@ -10,12 +10,10 @@
 
 import numpy as np
 import torch.nn as nn
-from . import core
 from . import datasets
 from . import nets, gen_utils, net_trainer
 
 # importlib.reload(core)
-from ai_libs.simple_log import LOG
 
 
 def test_odd():
@@ -27,7 +25,7 @@ def test_odd():
     network.context.regularization_l1 = 0.05
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_classification_n
-    optimizer = core.optimizers.LiveNetOptimizer(network, lr=0.02)
+    optimizer = livenet.core.optimizers.optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
     trainer.step(1001)
     scores = nn.functional.softmax(network(train_x), dim=1).detach().numpy()

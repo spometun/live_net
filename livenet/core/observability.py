@@ -57,11 +57,12 @@ class LifeStat:
 
 
 class LifeStatContributor:
-    def add_life_stat_entry(self, _type: str, tensor: torch.Tensor):
+    def add_life_stat_entry(self, _type: str, value):
         self.context: "Context"
         self.name: str
-        value = float(tensor.detach().numpy())
-        assert type(value) == float, f"Invalid input type {type(value)}"
+        if isinstance(value, torch.Tensor):
+            value = value.detach().numpy()
+        value = float(value)
         entry = {
             "type": _type,
             "value": value,

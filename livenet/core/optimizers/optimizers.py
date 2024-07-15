@@ -1,9 +1,9 @@
-from typing import Optional
+import numpy as np
 import torch
-from ai_libs.simple_log import LOG
 import math
 
 from livenet.core.observability import LifeStatContributor
+from livenet.core.optimizers.ad_step_filter import AdStepFilter
 
 
 class MyOptimizer(torch.optim.Optimizer):
@@ -69,6 +69,7 @@ class AdamForParameter(LifeStatContributor):
                 self.b1t *= self.b1
                 self.b2t *= self.b2
                 g = self.parameter.grad
+                g = float(g.detach().numpy())
                 assert math.isfinite(g)
                 self.add_life_stat_entry("gradient", g)
                 self.mt = self.b1 * self.mt + (1 - self.b1) * g
@@ -76,6 +77,35 @@ class AdamForParameter(LifeStatContributor):
                 mt = self.mt / (1 - self.b1t)
                 vt = self.vt / (1 - self.b2t)
                 delta = -lr * mt / (torch.sqrt(vt) + self.epsilon)
+                self.add_life_stat_entry("delta", delta)
+                self.parameter += delta
+                assert math.isfinite(self.parameter.item())
+        self.add_life_stat_entry("parameter", self.parameter)
+
+
+class AdStepParameter(LifeStatContributor):
+    def __init__(self, parameter: torch.Tensor, context, window_length: int):
+        self.filter = AdStepFilter(window_length)
+        self.parameter = parameter
+        self.name = parameter.livenet_name
+        self.context = context
+
+    def zero_grad(self):
+        with torch.no_grad():
+            if self.parameter.grad is not None:
+                self.parameter.grad.zero_()
+
+    def step(self):
+        # delta is always directed apposite to gradient with absolute value never exceeding context.learning_rate
+        if self.parameter.requires_grad:
+            with torch.no_grad():
+                lr = self.context.learning_rate
+                g = self.parameter.grad
+                g = float(g.detach().numpy())
+                self.add_life_stat_entry("gradient", g)
+                v = self.filter.process_value(g)
+                sign = float(np.sign(g))
+                delta = -sign * v * lr
                 self.add_life_stat_entry("delta", delta)
                 self.parameter += delta
                 assert math.isfinite(self.parameter.item())
