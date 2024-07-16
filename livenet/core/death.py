@@ -10,7 +10,7 @@ class LivenessObserver:
         return 1 if x >= 0 else -1
 
     def __init__(self, context):
-        self.threshold = 0.05
+        self.threshold = 0.01
         self.context = context
         self.n_small = 0
         self.last_sign = 0

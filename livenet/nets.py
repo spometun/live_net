@@ -37,7 +37,7 @@ def create_perceptron(n_inputs, n_middle, n_outputs):
                 input_.connect_to(neuron)
             for output in net.outputs:
                 output.connect_from(neuron)
-    net.root.visit("init_weight")
+    net.root.visit_member("init_weight")
     return net
 
 
