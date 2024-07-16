@@ -3,6 +3,8 @@ from typing import Any
 from abc import ABC
 from typing import List, override
 import abc
+
+import numpy as np
 import torch
 import torch.nn as nn
 import math
@@ -20,13 +22,12 @@ from . import utils
 
 class NeuralBase(GraphNode, LifeStatContributor):
     def __init__(self, context: "Context", only_one_output_request=False):
-        LOGD("Initializing Neuron")
         assert context is not None
+        assert self.name is not None, "Internal error"
         super().__init__()
         self._output = None
         self.context = context
         self.only_one_output_request = only_one_output_request
-        self.name: str = None
 
     @typing.final
     def compute_output(self) -> torch.Tensor:
@@ -34,7 +35,9 @@ class NeuralBase(GraphNode, LifeStatContributor):
             assert self._output is None, f"Internal error. Called compute_output on {self.__class__.__name__} more than once"
         if self._output is None:
             self._output = self._compute_output()
-            self.add_life_stat_entry("output", self._output)
+            with torch.no_grad():
+                max_output = np.max(np.abs(self._output.detach().numpy()))
+                self.add_life_stat_entry("max_output", max_output)
         return self._output
 
     @typing.final
@@ -57,8 +60,8 @@ class NeuralBase(GraphNode, LifeStatContributor):
 
 class SourceNeuron(NeuralBase, ABC):
     def __init__(self, context: "Context"):
+        LOGD(f"Source neuron init {self.name}")
         super().__init__(context)
-        LOGD("Source neuron init")
         self.axons: List[Synapse] = []
         self.context.topology_stat.on_useless_neuron(self)
 
@@ -90,8 +93,11 @@ class SourceNeuron(NeuralBase, ABC):
 
 class DestinationNeuron(NeuralBase):
     def __init__(self, context: "Context", activation):
+        try:
+            self.name
+        except AttributeError:
+            self.name = context.get_name("D")
         super().__init__(context)
-        self.name = context.get_name("D")
         LOGD(f"Destination neuron init {self.name}")
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter(self.name)
@@ -163,8 +169,11 @@ class DestinationNeuron(NeuralBase):
 
 class InputNeuron(SourceNeuron):
     def __init__(self, context: "Context"):
+        try:
+            self.name
+        except AttributeError:
+            self.name = context.get_name("I")
         super().__init__(context)
-        self.name = context.get_name("I")
         LOGD(f"InputNeuron init {self.name}")
 
     def set_output(self, value: torch.Tensor):
@@ -188,13 +197,14 @@ class InputNeuron(SourceNeuron):
 # todo: make all __init__ args kwargs for more flexible inheritance options
 class RegularNeuron(DestinationNeuron, SourceNeuron):
     def __init__(self, context: "Context", activation):
-        super().__init__(context=context, activation=activation)
+        # todo: use try/except when add any subclass of RegularNeuron
         self.name = context.get_name("N")
+        super().__init__(context=context, activation=activation)
 
 
 class Synapse(NeuralBase):
     def __init__(self, source: SourceNeuron, destination: DestinationNeuron):
-        assert source.context == destination.context
+        self.name = f"{source.name}->{destination.name}"
         context = source.context
         super().__init__(context=context, only_one_output_request=True)
         assert source != destination
@@ -202,8 +212,8 @@ class Synapse(NeuralBase):
         assert destination not in (synapse.destination for synapse in source.axons), "Connection already exists"
         self.source = source
         self.destination = destination
+        assert source.context == destination.context
         self.context = context
-        self.name = f"{source.name}->{destination.name}"
         self.k = context.obtain_float_parameter(self.name)
         self.random_constant = context.random.uniform(-1, 1)
         self.optimizer = context.optimizer_class(self.k, context, **context.optimizer_init_kwargs)

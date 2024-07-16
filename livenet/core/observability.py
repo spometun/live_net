@@ -11,7 +11,7 @@ class TopologyStat:
         self.useless = set()
 
     def on_dangle_neuron(self, dangle: "DestinationNeuron"):
-        LOG(f"{dangle.name} became dangle")
+        LOGD(f"{dangle.name} became dangle")
         assert dangle not in self.dangle
         self.dangle.add(dangle)
 
@@ -20,7 +20,7 @@ class TopologyStat:
         self.dangle.remove(dangle)
 
     def on_useless_neuron(self, useless: "SourceNeuron"):
-        LOG(f"{useless.name} became useless")
+        LOGD(f"{useless.name} became useless")
         assert useless not in self.useless
         self.useless.add(useless)
 

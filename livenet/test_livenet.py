@@ -28,10 +28,10 @@ def test_system_die_all():
     # simple_log.level = simple_log.LogLevel.DEBUG
     train_x, train_y = datasets.get_odd_2()
     network = nets.create_livenet_odd_2()
-    network.context.regularization_l1 = 1.  # big L1 regularization alpha will lead to quick death, even with big 'b'
+    network.context.regularization_l1 = 1.  # big L1 regularization alpha will lead to quick death of all neurons
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_classification_n
-    optimizer = optimizers.LiveNetOptimizer(network, lr=0.02)
+    optimizer = optimizers.optimizers.LiveNetOptimizer(network, lr=0.02)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     trainer.step(501)
     assert len(network.inputs[0].axons) == 0
@@ -41,7 +41,7 @@ def test_system_die_all():
     assert stat["dangle"]["RegularNeuron"] == 0
     assert stat["dangle"]["DestinationNeuron"] == 2
     assert stat["useless"]["RegularNeuron"] == 0
-    assert stat["useless"]["DataNeuron"] == 1
+    assert stat["useless"]["InputNeuron"] == 1
 
 
 # def test_system():
@@ -70,13 +70,13 @@ def _build_symmetric_dangle_net():
     neuron.connect_to(net.outputs[0])
     neuron.connect_to(net.outputs[1])
     # net.inputs[0].connect_to(neuron)
-    net.root.visit("init_weight")
-    # with torch.no_grad():
-    #     net.outputs[0].b[...] = 14.0
-    #     net.outputs[1].b[...] = -14.1
-    #     neuron.b[...] = 20.0
-    #     neuron.axons[0].k[...] = 10.0
-    #     neuron.axons[1].k[...] = -10.1
+    net.root.visit_member("init_weight")
+    with torch.no_grad():
+        net.outputs[0].b[...] = -30.0
+        net.outputs[1].b[...] = -0.0
+        neuron.b[...] = 6.0
+        neuron.axons[0].k[...] = 2.0
+        neuron.axons[1].k[...] = 0.0
     return net
 
 
@@ -88,7 +88,7 @@ def test_dangle_symmetric_die():
     criterion = nets.criterion_classification_n
     optimizer = nets.create_optimizer(network)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
-    network.context.regularization_l1 = 0.001
-    optimizer.learning_rate = 0.01
-    trainer.step(5000)
+    network.context.regularization_l1 = 0.05
+    optimizer.learning_rate = 0.002
+    trainer.step(15000)
     assert len(list(network.parameters())) == 2
