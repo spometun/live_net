@@ -269,7 +269,7 @@ pillow==10.4.0
     #   matplotlib
     #   torchvision
 platformdirs==4.2.2
-    # via jupyter-core
+    # via jupyter-backend
 pluggy==1.5.0
     # via pytest
 prometheus-client==0.20.0
@@ -390,7 +390,7 @@ traitlets==5.14.3
     #   ipywidgets
     #   jupyter-client
     #   jupyter-console
-    #   jupyter-core
+    #   jupyter-backend
     #   jupyter-events
     #   jupyter-server
     #   jupyterlab

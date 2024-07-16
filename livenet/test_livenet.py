@@ -1,10 +1,12 @@
 import torch
 
-from .core.livenet import Context, RegularNeuron, DestinationNeuron, SourceNeuron, InputNeuron
-from .core import optimizers, livenet
+import numpy as np
+from .backend.core import Context, RegularNeuron, DestinationNeuron, SourceNeuron, InputNeuron
+from .backend import optimizers, core
 from . import nets, gen_utils, net_trainer
 from . import datasets
 from ai_libs.simple_log import LOG
+import livenet
 
 
 def test_die():
@@ -45,7 +47,7 @@ def test_system_die_all():
 
 
 # def test_system():
-#     # core.simple_log.level = core.simple_log.LogLevel.DEBUG
+#     # backend.simple_log.level = backend.simple_log.LogLevel.DEBUG
 #     train_x, train_y = datasets.get_odd_2()
 #     context = livenet.Context()
 #     context.liveness_die_after_n_sign_changes = 2
@@ -63,7 +65,7 @@ def test_system_die_all():
 
 
 def _build_symmetric_dangle_net():
-    net = livenet.LiveNet()
+    net = livenet.backend.core.LiveNet()
     net.outputs += [DestinationNeuron(net.context, activation=None), DestinationNeuron(net.context, activation=None)]
     net.inputs += [InputNeuron(net.context)]
     neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
@@ -92,3 +94,46 @@ def test_dangle_symmetric_die():
     optimizer.learning_rate = 0.002
     trainer.step(15000)
     assert len(list(network.parameters())) == 2
+
+
+def test_odd():
+    # simple_log.level = simple_log.LogLevel.DEBUG
+    train_x, train_y = datasets.get_odd_2()
+    network = nets.create_livenet_odd_2()
+    assert len(list(network.parameters())) == 10
+    res = network(train_x)
+    network.context.regularization_l1 = 0.05
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
+    criterion = nets.criterion_classification_n
+    optimizer = livenet.backend.optimizers.optimizers.LiveNetOptimizer(network, lr=0.01)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
+    trainer.step(1001)
+    scores = torch.nn.functional.softmax(network(train_x), dim=1).detach().numpy()
+    # LOG(scores)
+    prediction = np.argmax(scores, axis=1)
+    assert np.all(prediction == train_y.numpy().squeeze(1))
+    assert len(list(network.parameters())) == 8
+    # backend.livenet.export_onnx(network, "/home/spometun/table/home/net.onnx")
+
+
+def test_mnist_perceptron_die():
+    # simple_log.level = simple_log.LogLevel.DEBUG
+    downscale = (14, 14)
+    train_x, train_y = datasets.to_plain(*datasets.get_mnist_train(), downscale=downscale, to_odd=True,
+                                         to_gray=True)
+    network = nets.create_perceptron(train_x.shape[1], 2, 2)
+    batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=1000)
+    criterion = nets.criterion_classification_n
+    optimizer = nets.create_optimizer(network)
+    trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
+    assert len(list(network.parameters())) == 16
+    network.context.regularization_l1 = 0.01
+    optimizer.learning_rate = 0.01
+    trainer.step(500)
+
+    assert len(list(network.parameters())) == 10  # 8
+    pred = network(train_x)
+    pred_bin = np.argmax(pred.detach().numpy(), axis=1, keepdims=True)
+    diff = train_y - pred_bin
+    accuracy = len(diff[diff == 0]) / len(diff)
+    assert accuracy > 0.7

@@ -2,7 +2,6 @@ print(f"package {__package__}")
 import numpy as np
 from ai_libs.simple_log import LOG
 from . import livenet
-core = livenet.core
 
 
 class N:
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     # plt.ion()
     criterion = livenet.nets.criterion_classification_n
     net = livenet.nets.PERCEPTRON(784, 2)
-    # net = core.livenet.LiveNet(784, None, 2)
+    # net = backend.livenet.LiveNet(784, None, 2)
     sizes, times = livenet.utils.calc_batch_times(net, criterion, 4096)
     # plt.plot(sizes, times)
     # plt.grid()

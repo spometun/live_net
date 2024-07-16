@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import math
 
-from livenet.core.observability import LifeStatContributor
-from livenet.core.optimizers.ad_step_filter import AdStepFilter
+from livenet.backend.observability import LifeStatContributor
+from livenet.backend.optimizers.ad_step_filter import AdStepFilter
 
 
 class MyOptimizer(torch.optim.Optimizer):
