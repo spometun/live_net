@@ -11,7 +11,7 @@ import math
 import random
 
 from .death import LivenessObserver
-from livenet.core.observability import TopologyStat, LifeStatContributor
+from livenet.backend.observability import TopologyStat, LifeStatContributor
 from .graph import GraphNode, NodesHolder
 from .utils import ValueHolder
 

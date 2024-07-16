@@ -42,20 +42,6 @@ class TopologyStat:
         return stat
 
 
-class LifeStat:
-    def __init__(self):
-        self.data: dict[str, list[dict[str, Any]]] = dict()
-        self.reset()
-
-    def reset(self):
-        self.data = dict()
-
-    def add_entry(self, name: str, data: dict[str, Any]):
-        if name not in self.data.keys():
-            self.data[name] = []
-        self.data[name].append(data)
-
-
 class LifeStatContributor:
     def add_life_stat_entry(self, _type: str, value):
         self.context: "Context"

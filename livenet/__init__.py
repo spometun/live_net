@@ -1,6 +1,5 @@
-from . import core
+from . import backend
 from . import datasets
-from . import dev
 from . import gen_utils
 from . import net_trainer
 from . import nets
