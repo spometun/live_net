@@ -37,7 +37,7 @@ class NeuralBase(GraphNode, LifeStatContributor):
             self._output = self._compute_output()
             with torch.no_grad():
                 max_output = np.max(np.abs(self._output.detach().numpy()))
-                self.add_life_stat_entry("max_output", max_output)
+                self.add_life_stat_entry("output_max", max_output)
         return self._output
 
     @typing.final
@@ -102,6 +102,8 @@ class DestinationNeuron(NeuralBase):
         self.dendrites: List[Synapse] = []
         self.b = context.obtain_float_parameter(self.name)
         self.optimizer = self.context.optimizer_class(self.b, context, **self.context.optimizer_init_kwargs)
+        if activation is None:
+            activation = lambda x: x
         self.activation = activation
         self.context.topology_stat.on_dangle_neuron(self)
 
@@ -132,9 +134,14 @@ class DestinationNeuron(NeuralBase):
             output = self.b
             for synapse in self.dendrites:
                 output = output + synapse.compute_output()
-        if self.activation is not None:
-            output = self.activation(output)
-        return output
+        active_output = self.activation(output)
+        with torch.no_grad():
+            ratio_low_cut = torch.sum(output < active_output).item() / len(output)
+            ratio_high_cut = torch.sum(output > active_output).item() / len(output)
+            self.add_life_stat_entry("output_low_cut_ratio", ratio_low_cut)
+            self.add_life_stat_entry("output_high_cut_ratio", ratio_high_cut)
+
+        return active_output
 
     def add_dendrite(self, synapse: "Synapse"):
         assert synapse not in self.dendrites, "Internal error"
@@ -236,6 +243,8 @@ class Synapse(NeuralBase):
         assert self.source is not None and self.destination is not None, "Internal error"
         self.optimizer.step()
         self.liveness_observer.put(self.k.item())
+
+    def kill_if_needed(self):
         status = self.liveness_observer.status()
         if status == -1:
             self.die()
@@ -315,6 +324,7 @@ class LiveNet(nn.Module):
         self.inputs: list[InputNeuron] = []
         self.outputs: list[DestinationNeuron] = []
         self.root = NodesHolder("root", self.outputs)
+        self.mortal = True
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert len(x.shape) == 2, "Invalid input shape"
@@ -334,10 +344,14 @@ class LiveNet(nn.Module):
 
     def zero_grad(self, set_to_none: bool = True):
         assert set_to_none is False  # this parameter only to match torch nn.Module zero_grad interface
-        self.root.visit_member("zero_grad")
+        with torch.no_grad():
+            self.root.visit_member("zero_grad")
 
     def on_grad_update(self):
-        self.root.visit_member("on_grad_update")
+        with torch.no_grad():
+            self.root.visit_member("on_grad_update")
+            if self.mortal:
+                self.root.visit_member("kill_if_needed")
         self.context.tick += 1
 
     def input_shape(self):
