@@ -90,6 +90,7 @@ class NetTrainer:
         msg += f" params={len(params)}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.4f}"
+        msg += f" tick {self.network.context.tick}"
         LOG(msg)
         self.loss_criterion = 0.0
         self.loss_network = 0.0

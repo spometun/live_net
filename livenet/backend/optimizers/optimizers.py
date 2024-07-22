@@ -98,17 +98,16 @@ class AdStepParameter(LifeStatContributor):
     def step(self):
         # delta is always directed apposite to gradient with absolute value never exceeding context.learning_rate
         if self.parameter.requires_grad:
-            with torch.no_grad():
-                lr = self.context.learning_rate
-                g = self.parameter.grad
-                g = float(g.detach().numpy())
-                self.add_life_stat_entry("gradient", g)
-                v = self.filter.process_value(g)
-                sign = float(np.sign(g))
-                delta = -sign * v * lr
-                self.add_life_stat_entry("delta", delta)
-                self.parameter += delta
-                assert math.isfinite(self.parameter.item())
+            lr = self.context.learning_rate
+            g = self.parameter.grad
+            g = float(g.numpy())
+            self.add_life_stat_entry("gradient", g)
+            v = self.filter.process_value(g)
+            sign = float(np.sign(g))
+            delta = -sign * v * lr
+            self.add_life_stat_entry("delta", delta)
+            self.parameter += delta
+            assert math.isfinite(self.parameter.item())
         self.add_life_stat_entry("parameter", self.parameter)
 
 
