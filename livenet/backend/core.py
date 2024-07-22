@@ -31,6 +31,8 @@ class NeuralBase(GraphNode, LifeStatContributor):
 
     @typing.final
     def compute_output(self) -> torch.Tensor:
+        # output is (batch, 1) tensor of floats,
+        # or float scalar in rare cases (e.g. in case of dangle neuron - the one with zero dendrites)
         if self.only_one_output_request:
             assert self._output is None, f"Internal error. Called compute_output on {self.__class__.__name__} more than once"
         if self._output is None:
@@ -136,8 +138,14 @@ class DestinationNeuron(NeuralBase):
                 output = output + synapse.compute_output()
         active_output = self.activation(output)
         with torch.no_grad():
-            ratio_low_cut = torch.sum(output < active_output).item() / len(output)
-            ratio_high_cut = torch.sum(output > active_output).item() / len(output)
+            ndim = len(output.shape)
+            if ndim == 0:
+                n = 1
+            else:
+                assert ndim == 2, "Internal error"
+                n = len(output)
+            ratio_low_cut = torch.sum(output < active_output).item() / n
+            ratio_high_cut = torch.sum(output > active_output).item() / n
             self.add_life_stat_entry("output_low_cut_ratio", ratio_low_cut)
             self.add_life_stat_entry("output_high_cut_ratio", ratio_high_cut)
 
