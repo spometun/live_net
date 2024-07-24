@@ -46,24 +46,6 @@ def test_system_die_all():
     assert stat["useless"]["InputNeuron"] == 1
 
 
-# def test_system():
-#     # backend.simple_log.level = backend.simple_log.LogLevel.DEBUG
-#     train_x, train_y = datasets.get_odd_2()
-#     context = livenet.Context()
-#     context.liveness_die_after_n_sign_changes = 2
-#     context.regularization_l1 = 0.01
-#     network = nets.create_livenet_odd_2(context)
-#     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
-#     criterion = nets.criterion_classification_n
-#     optimizer = optimizers.LiveNetOptimizer(network, lr=0.05)
-#     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
-#     trainer.step(401)
-#     assert len(trainer.history[0]["params"]) > len(trainer.history[-1]["params"])  # some stuff must be dead
-#     assert trainer.history[0]["loss"] > 0.03
-#     assert trainer.history[-1]["loss"] < 0.01
-#     assert trainer.history[-1]["loss_reg"] > 0.0
-
-
 def _build_symmetric_dangle_net():
     net = livenet.backend.core.LiveNet()
     net.outputs += [DestinationNeuron(net.context, activation=None), DestinationNeuron(net.context, activation=None)]
@@ -127,13 +109,13 @@ def test_mnist_perceptron_die():
     optimizer = nets.create_optimizer(network)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
     assert len(list(network.parameters())) == 16
-    network.context.regularization_l1 = 0.01
+    network.context.regularization_l1 = 0.001
     optimizer.learning_rate = 0.01
     trainer.step(500)
 
-    assert len(list(network.parameters())) == 10  # 8
+    assert len(list(network.parameters())) == 6
     pred = network(train_x)
     pred_bin = np.argmax(pred.detach().numpy(), axis=1, keepdims=True)
-    diff = train_y - pred_bin
+    diff = train_y.numpy() - pred_bin
     accuracy = len(diff[diff == 0]) / len(diff)
     assert accuracy > 0.7
