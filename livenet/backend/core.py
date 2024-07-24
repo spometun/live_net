@@ -38,8 +38,11 @@ class NeuralBase(GraphNode, LifeStatContributor):
         if self._output is None:
             self._output = self._compute_output()
             with torch.no_grad():
-                max_output = np.max(np.abs(self._output.detach().numpy()))
+                abs_output = np.abs(self._output.detach().numpy())
+                max_output = np.max(abs_output)
                 self.add_life_stat_entry("output_max", max_output)
+                av_output = np.mean(abs_output)
+                self.add_life_stat_entry("output_av", av_output)
         return self._output
 
     @typing.final
@@ -56,7 +59,7 @@ class NeuralBase(GraphNode, LifeStatContributor):
     def init_weight(self): ...
 
     def die(self):
-        LOG(f"{self.name} die BaseNeural")
+        LOGD(f"{self.name} die BaseNeural")
         self.context.remove_parameter(self.name)
 
 
@@ -304,7 +307,7 @@ class Context:
         self.name_counters = {}
         self.topology_stat = TopologyStat()
         self.life_stat: list[dict[str, Any]] = []
-        self.tick: int = 0
+        self.tick: int = -1
         self.liveness_die_after_n_sign_changes = 5
         self.reduce_sum_computation = False
 
@@ -360,7 +363,6 @@ class LiveNet(nn.Module):
             self.root.visit_member("on_grad_update")
             if self.mortal:
                 self.root.visit_member("kill_if_needed")
-        self.context.tick += 1
 
     def input_shape(self):
         return torch.Size([len(self.inputs)])
