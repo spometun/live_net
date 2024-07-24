@@ -2,9 +2,27 @@ import typing
 
 import numpy as np
 import torch
+import pandas as pd
 
 from ai_libs.simple_log import LOG
 from . import utils
+
+
+def get_summary_stat(life_stat: pd.DataFrame):
+    low_cut = life_stat[life_stat["type"] == "output_low_cut_ratio"]
+    low_cut = low_cut["value"].mean()
+    high_cut = life_stat[life_stat["type"] == "output_high_cut_ratio"]
+    high_cut = high_cut["value"].mean()
+    gradient = life_stat[life_stat["type"] == "gradient"]
+    av_abs_grad = gradient["value"].abs().mean()
+    parameter = life_stat[life_stat["type"] == "parameter"]
+    max_abs_param = parameter["value"].abs().max()
+    delta = life_stat[life_stat["type"] == "delta"]
+    av_abs_delta = delta["value"].abs().mean()
+    av_abs_output = life_stat[life_stat["type"] == "output_av"]
+    av_abs_output = av_abs_output["value"].mean()
+    res = f"av_abs_grad {av_abs_grad:.1g} av_abs_delta: {av_abs_delta:.1g} av_abs_output {av_abs_output:.1g} max_abs_param {max_abs_param:.1f} hcut {high_cut:.1g} lcut {low_cut:.1f}"
+    return res
 
 
 class NetTrainer:
@@ -25,12 +43,14 @@ class NetTrainer:
         self.adaptive_lr_decrease_step = 1.2
         self.adaptive_lr_max_lr = 0.1
         self.adaptive_lr_min_lr = 0.00001
+        self.last_epoch_tick = -1
 
     def step(self, n_steps=1):
         for _ in range(n_steps):
             self._step()
 
     def _step(self):
+        self.network.context.tick += 1
         data, labels = next(self.batch_iterator)
         pred = self.network.forward(data)
 
@@ -81,18 +101,20 @@ class NetTrainer:
         epoch_loss_criterion /= self.epoch_size
         epoch_loss_network /= self.epoch_size
         self.history.append({"params": params,
-                             "grads": grads,
                              "loss": epoch_loss_criterion,
                              "loss_reg": epoch_loss_network})
-        msg = f"{epoch_loss_criterion + epoch_loss_network:.3f}"
-        # if epoch_loss_network != 0.0:
-        msg += f" = {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}reg"
+        tick = self.network.context.tick
+        msg = f"{tick}"
+        msg += f" {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}reg"
         msg += f" params={len(params)}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.4f}"
-        msg += f" tick {self.network.context.tick}"
+        df = pd.DataFrame(self.network.context.life_stat)
+        df = df[df["tick"] > self.last_epoch_tick]
+        msg += f" {get_summary_stat(df)}"
         LOG(msg)
         self.loss_criterion = 0.0
         self.loss_network = 0.0
         self.counter_good = 0
+        self.last_epoch_tick = tick
 
