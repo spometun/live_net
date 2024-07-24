@@ -33,7 +33,7 @@ def create_perceptron(n_inputs, n_middle, n_outputs):
                 input_.connect_to(output)
     else:
         for i in range(n_middle):
-            neuron = RegularNeuron(net.context, activation=torch.nn.ReLU())
+            neuron = RegularNeuron(net.context, activation=torch.nn.ReLU6())
             for input_ in net.inputs:
                 input_.connect_to(neuron)
             for output in net.outputs:
