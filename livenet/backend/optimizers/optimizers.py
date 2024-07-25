@@ -100,7 +100,7 @@ class AdStepParameter(LifeStatContributor):
         if self.parameter.requires_grad:
             lr = self.context.learning_rate
             g = self.parameter.grad
-            g = float(g.numpy())
+            g = float(g.cpu().numpy())
             self.add_life_stat_entry("gradient", g)
             v = self.filter.process_value(g)
             sign = float(np.sign(g))

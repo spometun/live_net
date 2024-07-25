@@ -12,7 +12,7 @@ def get_parameters_dict(network: torch.nn.Module, clone=True):
         param = param.detach()
         if clone:
             param = param.clone()
-        res[name] = param.numpy()
+        res[name] = param.cpu().numpy()
     return res
 
 

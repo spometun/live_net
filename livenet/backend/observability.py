@@ -47,7 +47,7 @@ class LifeStatContributor:
         self.context: "Context"
         self.name: str
         if isinstance(value, torch.Tensor):
-            value = value.detach().numpy()
+            value = value.detach().cpu().numpy()
         value = float(value)
         entry = {
             "type": _type,

@@ -38,7 +38,7 @@ class NeuralBase(GraphNode, LifeStatContributor):
         if self._output is None:
             self._output = self._compute_output()
             with torch.no_grad():
-                abs_output = np.abs(self._output.detach().numpy())
+                abs_output = np.abs(self._output.detach().cpu().numpy())
                 max_output = np.max(abs_output)
                 self.add_life_stat_entry("output_max", max_output)
                 av_output = np.mean(abs_output)

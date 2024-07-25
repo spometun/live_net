@@ -110,7 +110,7 @@ def test_zip_with_len():
     assert n == 2 * len(a)
 
 
-def batch_iterator(x: torch.Tensor, y: torch.Tensor, batch_size=1, skip_smaller_last=True, seed=0):
+def batch_iterator(x: torch.Tensor, y: torch.Tensor, batch_size=1, skip_smaller_last=True, only_one_epoch=False, seed=0):
     assert len(x) == len(y)
     epoch_size = len(x)
     rnd = None
@@ -119,6 +119,8 @@ def batch_iterator(x: torch.Tensor, y: torch.Tensor, batch_size=1, skip_smaller_
     while True:
         for start, end in index_batcher(batch_size, epoch_size, skip_smaller_last):
             yield x[start:end], y[start:end]
+        if only_one_epoch:
+            break
         if rnd is None:
             rnd = np.random.default_rng(seed=seed)
         permutation = rnd.permutation(epoch_size)
