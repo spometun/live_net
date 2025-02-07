@@ -146,7 +146,7 @@ class DestinationNeuron(NeuralBase):
                 n = 1
             else:
                 assert ndim == 2, "Internal error"
-                n = len(output)
+                n = output.shape[0]
             ratio_low_cut = torch.sum(output < active_output).item() / n
             ratio_high_cut = torch.sum(output > active_output).item() / n
             self.add_life_stat_entry("output_low_cut_ratio", ratio_low_cut)

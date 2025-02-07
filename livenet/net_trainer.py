@@ -21,7 +21,9 @@ def get_summary_stat(life_stat: pd.DataFrame):
     av_abs_delta = delta["value"].abs().mean()
     av_abs_output = life_stat[life_stat["type"] == "output_av"]
     av_abs_output = av_abs_output["value"].mean()
-    res = f"av_abs_grad {av_abs_grad:.1g} av_abs_delta: {av_abs_delta:.1g} av_abs_output {av_abs_output:.1g} max_abs_param {max_abs_param:.1f} hcut {high_cut:.1g} lcut {low_cut:.1f}"
+    max_abs_output = life_stat[life_stat["type"] == "output_max"]
+    max_abs_output = max_abs_output["value"].mean()
+    res = f"av_abs_grad {av_abs_grad:.1g} av_abs_delta: {av_abs_delta:.1g} av_abs_output {av_abs_output:.1g} max_abs_output {max_abs_output:.1g} max_abs_param {max_abs_param:.1f} hcut {high_cut:.1g} lcut {low_cut:.1f}"
     return res
 
 
@@ -44,6 +46,7 @@ class NetTrainer:
         self.adaptive_lr_max_lr = 0.1
         self.adaptive_lr_min_lr = 0.00001
         self.last_epoch_tick = -1
+        self.clear_life_stat = True
 
     def step(self, n_steps=1):
         for _ in range(n_steps):
@@ -109,9 +112,12 @@ class NetTrainer:
         msg += f" params={len(params)}"
         if self.adaptive_lr:
             msg += f" lr={self.optimizer.learning_rate:.4f}"
+
         df = pd.DataFrame(self.network.context.life_stat)
         df = df[df["tick"] > self.last_epoch_tick]
         msg += f" {get_summary_stat(df)}"
+        if self.clear_life_stat:
+            self.network.context.life_stat = []
         LOG(msg)
         self.loss_criterion = 0.0
         self.loss_network = 0.0

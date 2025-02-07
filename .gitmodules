@@ -1,3 +1,0 @@
-[submodule "alexnet-pytorch"]
-	path = alexnet-pytorch
-	url = ./alexnet-pytorch/
