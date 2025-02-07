@@ -5,6 +5,8 @@ from typing import Callable
 import torch
 from torch import Tensor, nn
 
+from ai_libs.simple_log import LOG
+
 
 def get_parameters_dict(network: torch.nn.Module, clone=True):
     res = {}
@@ -54,4 +56,4 @@ def calc_batch_times(network: torch.nn.Module,
 
 def export_onnx(model: nn.Module, path):
     dummy_input = torch.zeros((1, *model.input_shape()))
-    torch.onnx.export(model, dummy_input, path, verbose=False)
+    torch.onnx.export(model, dummy_input, path, verbose=False, do_constant_folding=False)

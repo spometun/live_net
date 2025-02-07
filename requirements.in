@@ -8,3 +8,4 @@ matplotlib
 onnx
 more_itertools
 pandas
+pygobject
