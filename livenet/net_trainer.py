@@ -114,8 +114,9 @@ class NetTrainer:
             msg += f" lr={self.optimizer.learning_rate:.4f}"
 
         df = pd.DataFrame(self.network.context.life_stat)
-        df = df[df["tick"] > self.last_epoch_tick]
-        msg += f" {get_summary_stat(df)}"
+        if len(df) > 0:
+            df = df[df["tick"] > self.last_epoch_tick]
+            msg += f" {get_summary_stat(df)}"
         if self.clear_life_stat:
             self.network.context.life_stat = []
         LOG(msg)
