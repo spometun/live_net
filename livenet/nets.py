@@ -4,7 +4,7 @@ import torch
 from torch import nn as nn
 from ai_libs.simple_log import LOG
 from .backend import core, optimizers
-from .backend.core import DestinationNeuron, InputNeuron, RegularNeuron
+from .backend.core import DestinationNeuron, InputNeuron, RegularNeuron, Context
 from .backend.graph import NodesHolder
 import livenet
 
@@ -243,6 +243,6 @@ def create_optimizer(net: torch.nn.Module):
         # optimizer = torch.optim.Adam(net.parameters())
     else:
         print("Torch")
-        optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
-        # optimizer = optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
+        #optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
+        optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
     return optimizer
