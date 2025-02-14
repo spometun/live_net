@@ -3,7 +3,7 @@ import torch
 import math
 
 from livenet.backend.observability import LifeStatContributor
-from livenet.backend.optimizers.ad_step_filter import AdStepFilter
+from livenet.backend.optimizers.ad_step_filter import AdStepFilter, UnitFilter
 
 
 class MyOptimizer(torch.optim.Optimizer):
@@ -85,7 +85,8 @@ class AdamForParameter(LifeStatContributor):
 
 class AdStepParameter(LifeStatContributor):
     def __init__(self, parameter: torch.Tensor, context, window_length: int):
-        self.filter = AdStepFilter(window_length)
+        # self.filter = AdStepFilter(window_length)
+        self.filter = UnitFilter()
         self.parameter = parameter
         self.name = parameter.livenet_name
         self.context = context
@@ -96,14 +97,14 @@ class AdStepParameter(LifeStatContributor):
                 self.parameter.grad.zero_()
 
     def step(self):
-        # delta is always directed apposite to gradient with absolute value never exceeding context.learning_rate
+        # delta is always directed apposite to gradient with absolute value which never exceeds context.learning_rate
         if self.parameter.requires_grad:
             lr = self.context.learning_rate
             g = self.parameter.grad
-            g = float(g.cpu().numpy())
+            g = g.cpu().numpy()
             self.add_life_stat_entry("gradient", g)
             v = self.filter.process_value(g)
-            sign = float(np.sign(g))
+            sign = np.sign(g)
             delta = -sign * v * lr
             self.add_life_stat_entry("delta", delta)
             self.parameter += delta
