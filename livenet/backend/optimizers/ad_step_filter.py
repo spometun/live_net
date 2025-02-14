@@ -59,20 +59,9 @@ def test_ad_step_filter_array():
         v1 = rng.randint(0, 10) - 5
         v2 = rng.randint(0, 10) - 9
         v = np.array([v1, v2])
-
         # v = 20 * (i % 2) - 10
         r = f.process_value(v)
         LOG(i, f"{r[0]:.2g} {r[1]:.2g}", v)
-
-
-def test_ad_step_filter2():
-    rng = random.Random(x=42)
-    f = AdStepFilter(10)
-    for i in range(20):
-        v = rng.randint(0, 10) - 5
-        # v = 20 * (i % 2) - 10
-        r = f.process_value(v)
-        LOG(i, f"{r:.2g}", v)
 
 
 def test_ad_step_filter():
@@ -85,13 +74,13 @@ def test_ad_step_filter():
             if i == 2500:
                 assert r <= 0.001
             v = 100  # absolute value should not matter
-        r = f.process_value(v)
+        r = f.process_value(np.array(v))
     assert r == pytest.approx(1 - math.exp(-1), 0.01)  # relaxation time
 
     f = AdStepFilter(20)
     rng = random.Random(x=42)
     for i in range(100):
         v = 2 * rng.randint(0, 1) - 1
-        r = f.process_value(v)
+        r = f.process_value(np.array(v))
         LOG(i, r)
     assert r == pytest.approx(0.2725, 0.1)
