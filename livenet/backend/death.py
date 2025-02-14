@@ -1,7 +1,7 @@
 import math
 import collections
 
-from ai_libs.simple_log import LOGD
+from ai_libs.simple_log import LOGD, LOG
 
 
 class LivenessObserver:
@@ -10,7 +10,6 @@ class LivenessObserver:
         return 1 if x >= 0 else -1
 
     def __init__(self, context):
-        self.threshold = 0.01
         self.context = context
         self.n_small = 0
         self.last_sign = 0
@@ -24,7 +23,7 @@ class LivenessObserver:
             self.sign_history.popleft()
             self.sign_history.append(self.context.tick)
         self.last_sign = sign
-        if abs(x) <= self.threshold:
+        if abs(x) <= 2 * self.context.learning_rate:
             self.n_small += 1
         else:
             self.n_small = 0
