@@ -110,9 +110,12 @@ def test_mnist_perceptron_die():
     assert len(list(network.parameters())) == 16
     network.context.regularization_l1 = 0.001
     optimizer.learning_rate = 0.01
-    trainer.step(500)
+    network.mortal = False
+    trainer.step(250)
+    network.mortal = True
+    trainer.step(250)
 
-    assert len(list(network.parameters())) <= 16
+    assert len(list(network.parameters())) <= 10
     pred = network(train_x)
     pred_bin = np.argmax(pred.detach().numpy(), axis=1, keepdims=True)
     diff = train_y.numpy() - pred_bin
