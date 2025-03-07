@@ -85,8 +85,8 @@ class AdamForParameter(LifeStatContributor):
 
 class AdStepParameter(LifeStatContributor):
     def __init__(self, parameter: torch.Tensor, context, window_length: int):
-        #self.filter = AdStepFilter(window_length)
-        self.filter = UnitFilter()
+        self.filter = AdStepFilter(window_length)
+        # self.filter = UnitFilter()
         self.parameter = parameter
         self.name = parameter.livenet_name
         self.context = context
