@@ -23,7 +23,7 @@ class LivenessObserver:
             self.sign_history.popleft()
             self.sign_history.append(self.context.tick)
         self.last_sign = sign
-        if abs(x) <= 2 * self.context.learning_rate:
+        if abs(x) <= 1.1 * self.context.learning_rate:
             self.n_small += 1
         else:
             self.n_small = 0
