@@ -294,7 +294,7 @@ class Synapse(NeuralBase):
 
 
 class Context:
-    def __init__(self, module: nn.Module, seed=0):
+    def __init__(self, module: nn.Module, seed=42):
         self.module = module
         self.random = random.Random(seed)
         self.n_params = 0

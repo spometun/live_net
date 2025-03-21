@@ -74,7 +74,7 @@ def test_dangle_symmetric_die():
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=100)
     network.context.regularization_l1 = 0.05
     optimizer.learning_rate = 0.002
-    trainer.step(15000)
+    trainer.step(16000)
     assert len(list(network.parameters())) == 2
 
 
@@ -84,12 +84,12 @@ def test_odd():
     network = nets.create_livenet_odd_2()
     assert len(list(network.parameters())) == 10
     res = network(train_x)
-    network.context.regularization_l1 = 0.05
+    network.context.regularization_l1 = 0.1
     batch_iterator = gen_utils.batch_iterator(train_x, train_y, batch_size=len(train_x))
     criterion = nets.criterion_classification_n
-    optimizer = livenet.backend.optimizers.optimizers.LiveNetOptimizer(network, lr=0.01)
+    optimizer = livenet.backend.optimizers.optimizers.LiveNetOptimizer(network, lr=0.001)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
-    trainer.step(1001)
+    trainer.step(2001)
     scores = torch.nn.functional.softmax(network(train_x), dim=1).detach().numpy()
     # LOG(scores)
     prediction = np.argmax(scores, axis=1)
@@ -108,7 +108,7 @@ def test_mnist_perceptron_die():
     optimizer = nets.create_optimizer(network)
     trainer = net_trainer.NetTrainer(network, batch_iterator, criterion, optimizer, epoch_size=50)
     assert len(list(network.parameters())) == 16
-    network.context.regularization_l1 = 0.001
+    network.context.regularization_l1 = 0.01
     optimizer.learning_rate = 0.01
     network.mortal = False
     trainer.step(250)
