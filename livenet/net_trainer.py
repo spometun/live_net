@@ -1,3 +1,4 @@
+import math
 import typing
 
 import numpy as np
@@ -41,15 +42,21 @@ class NetTrainer:
         self.loss_criterion = 0.0
         self.loss_network = 0.0
         self.adaptive_lr = adaptive_lr
-        self.adaptive_lr_increase_step = 1.02
-        self.adaptive_lr_decrease_step = 1.2
-        self.adaptive_lr_max_lr = 0.1
-        self.adaptive_lr_min_lr = 0.00001
+        self.adaptive_lr_increase_step = 1.005
+        self.adaptive_lr_decrease_step = 2
+        self.adaptive_lr_max_lr = 0.01
+        self.adaptive_lr_min_lr = 1e-6
         self.last_epoch_tick = -1
+        self.last_epoch_all_loss = math.inf
+        self.hm = 0
+        self._need_to_stop = False
         self.clear_life_stat = True
 
     def step(self, n_steps=1):
         for _ in range(n_steps):
+            if self._need_to_stop:
+                LOG("stopped")
+                break
             self._step()
 
     def _step(self):
@@ -68,7 +75,8 @@ class NetTrainer:
         self.optimizer.step()
 
         if self.adaptive_lr:
-            self._adjust_lr(data, labels, all_loss)
+            pass
+            # self._adjust_lr(data, labels, all_loss)
 
         self.counter += 1
         if self.counter % self.epoch_size == 0:
@@ -91,7 +99,8 @@ class NetTrainer:
                 new_lr = old_lr / self.adaptive_lr_decrease_step
                 sign = "--"
             new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
-            # LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
+            if sign == "--":
+                LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
             self.optimizer.learning_rate = new_lr
 
     def _on_epoch(self):
@@ -111,7 +120,18 @@ class NetTrainer:
         msg += f" {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}reg"
         msg += f" params={len(params)}"
         if self.adaptive_lr:
-            msg += f" lr={self.optimizer.learning_rate:.4f}"
+            all_loss = epoch_loss_criterion + epoch_loss_network
+            k = all_loss / self.last_epoch_all_loss
+            if k >= 1:
+                self.hm += 1
+            else:
+                self.hm = 0
+            if self.hm == 2:
+                self.optimizer.learning_rate /= 2
+            if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
+                self._need_to_stop = True
+            msg += f" lr={self.optimizer.learning_rate:.6f}"
+            self.last_epoch_all_loss = all_loss
 
         df = pd.DataFrame(self.network.context.life_stat)
         if len(df) > 0:
@@ -119,9 +139,11 @@ class NetTrainer:
             msg += f" {get_summary_stat(df)}"
         if self.clear_life_stat:
             self.network.context.life_stat = []
+
         LOG(msg)
         self.loss_criterion = 0.0
         self.loss_network = 0.0
         self.counter_good = 0
         self.last_epoch_tick = tick
+
 
