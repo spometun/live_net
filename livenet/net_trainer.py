@@ -45,7 +45,7 @@ class NetTrainer:
         self.adaptive_lr_increase_step = 1.005
         self.adaptive_lr_decrease_step = 2
         self.adaptive_lr_max_lr = 0.01
-        self.adaptive_lr_min_lr = 1e-6
+        self.adaptive_lr_min_lr = 1e-5
         self.last_epoch_tick = -1
         self.last_epoch_all_loss = math.inf
         self.hm = 0
@@ -130,7 +130,7 @@ class NetTrainer:
                 self.optimizer.learning_rate /= 2
             if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
                 self._need_to_stop = True
-            msg += f" lr={self.optimizer.learning_rate:.6f}"
+            msg += f" lr={self.optimizer.learning_rate:.5f}"
             self.last_epoch_all_loss = all_loss
 
         df = pd.DataFrame(self.network.context.life_stat)
