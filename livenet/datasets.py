@@ -6,6 +6,16 @@ import os
 datasets_dir = f"{os.getenv('HOME')}/datasets/research"
 
 
+def augment_vertical_flip(data, labels):
+    flipped = torch.flip(data, dims=[-1])
+    augmented_x = torch.concatenate((data, flipped), dim=0)
+    augmented_y = torch.concatenate((labels, labels), dim=0)
+    rng = np.random.default_rng(0)
+    permutation = rng.permutation(len(augmented_x))
+    augmented_x = augmented_x[permutation]
+    augmented_y = augmented_y[permutation]
+    return augmented_x, augmented_y
+
 def get_xor():
     xor_x = torch.Tensor([[0., 0.],
                           [0., 1.],
@@ -89,8 +99,11 @@ def get_cifar10_test():
     return _get_cifar10(False)
 
 
-def get_cifar10_train():
-    return _get_cifar10(True)
+def get_cifar10_train(augment=False):
+    data, labels = _get_cifar10(True)
+    if augment:
+        data, labels = augment_vertical_flip(data, labels)
+    return data, labels
 
 
 def to_plain(x, y, downscale=1, to_odd=False, to_gray=False):

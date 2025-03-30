@@ -48,7 +48,7 @@ class NetTrainer:
         self.adaptive_lr_min_lr = 1e-5
         self.last_epoch_tick = -1
         self.last_epoch_all_loss = math.inf
-        self.hm = 0
+        self._n_loss_increases = 0
         self._need_to_stop = False
         self.clear_life_stat = True
 
@@ -123,10 +123,10 @@ class NetTrainer:
             all_loss = epoch_loss_criterion + epoch_loss_network
             k = all_loss / self.last_epoch_all_loss
             if k >= 1:
-                self.hm += 1
+                self._n_loss_increases += 1
             else:
-                self.hm = 0
-            if self.hm == 2:
+                self._n_loss_increases = 0
+            if self._n_loss_increases == 2:
                 self.optimizer.learning_rate /= 2
             if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
                 self._need_to_stop = True
