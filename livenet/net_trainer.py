@@ -62,6 +62,9 @@ class NetTrainer:
     def _step(self):
         self.network.context.tick += 1
         data, labels = next(self.batch_iterator)
+        device = next(self.network.parameters()).device
+        data = data.to(device)
+        labels = labels.to(device)
         pred = self.network.forward(data)
 
         loss = self.criterion(pred, labels)
@@ -126,7 +129,7 @@ class NetTrainer:
                 self._n_loss_increases += 1
             else:
                 self._n_loss_increases = 0
-            if self._n_loss_increases == 2:
+            if self._n_loss_increases == 3:
                 self.optimizer.learning_rate /= 2
             if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
                 self._need_to_stop = True
