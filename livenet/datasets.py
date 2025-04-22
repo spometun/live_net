@@ -18,23 +18,86 @@ def permutate_sync(data1, data2, rng=None):
 
 
 def augment_vertical_flip(data, labels):
+    data = torch.tensor(data, device="cpu")
     flipped = torch.flip(data, dims=[-1])
-    augmented_x = torch.concatenate((data, flipped), dim=0)
-    augmented_y = torch.concatenate((labels, labels), dim=0)
+    flipped = flipped.numpy()
+    augmented_x = np.concatenate((data, flipped), axis=0)
+    augmented_y = np.concatenate((labels, labels), axis=0)
     augmented_x, augmented_y = permutate_sync(augmented_x, augmented_y)
     return augmented_x, augmented_y
 
 
-def augment_ten_rotation_shifts(data, labels, rotation_degrees: float, crop_pixels: int):
-    data = np.array(data.cpu())
-    labels = np.array(labels.cpu())
+def get_augmented_ten_rotations_and_shifts(data, labels, rotation_degrees: float, crop_pixels: int):
     augmented_x = get_ten_rotation_shifts(data, rotation_degrees, crop_pixels)
-    augmented_x = np.concatenate((data, augmented_x), axis=0)
-    augmented_y = np.concatenate(11 * [labels], axis=0)
+    augmented_y = np.concatenate(10 * [labels], axis=0)
     augmented_x, augmented_y = permutate_sync(augmented_x, augmented_y)
-    augmented_x = torch.tensor(augmented_x, device="cpu")
-    augmented_y = torch.tensor(augmented_y, device="cpu")
     return augmented_x, augmented_y
+
+
+def get_augmented_eight_elastic_shifts(data, labels, shift:int):
+    assert len(data) == len(labels)
+    n = len(data)
+    augmented_x = np.empty_like(data, shape=(8 * n, *data.shape[1:]))
+    for i in range(n):
+        img = data[i]
+        augmented_x[i * 8 + 0] = _elastic_transform(img, (0, -shift))
+        augmented_x[i * 8 + 1] = _elastic_transform(img, (0, shift))
+        augmented_x[i * 8 + 2] = _elastic_transform(img, (-shift, 0))
+        augmented_x[i * 8 + 3] = _elastic_transform(img, (shift, 0))
+        augmented_x[i * 8 + 4] = _elastic_transform(img, (-shift, -shift))
+        augmented_x[i * 8 + 5] = _elastic_transform(img, (-shift, shift))
+        augmented_x[i * 8 + 6] = _elastic_transform(img, (shift, -shift))
+        augmented_x[i * 8 + 7] = _elastic_transform(img, (shift, shift))
+    augmented_y = np.repeat(labels, 8, axis=0)
+    augmented_x, augmented_y = permutate_sync(augmented_x, augmented_y)
+    return augmented_x, augmented_y
+
+
+def _elastic_transform(img, shift:tuple[int, int]):
+    """
+    Apply a smooth, 2‑D “elastic” shift so that the image centre moves by `shift`,
+    while all four edges remain unmoved.
+
+    Parameters
+    ----------
+    img : array_like
+        Input image, either grayscale (H×W) or color (H×W×C).
+    shift : tuple of float (shift_x, shift_y)
+        Horizontal and vertical shift (in pixels) to apply at the image center.
+    Returns
+    -------
+    warped : ndarray
+        The transformed image, same shape and dtype as `img`.
+    """
+    assert img.ndim == 3  # assume HWC
+    img = np.asarray(img)
+    h, w = img.shape[:2]
+    cx, cy = (w - 1) / 2, (h - 1) / 2
+
+    # 1D linear “tent” weights: 1 at centre, 0 at edges
+    x = np.arange(w)
+    y = np.arange(h)
+    wx = 1 - np.abs((x - cx) / cx)
+    wy = 1 - np.abs((y - cy) / cy)
+
+    # build full 2D weight map
+    WX, WY = np.meshgrid(wx, wy)
+
+    # per‑pixel offset fields
+    dx = WX * shift[1]
+    dy = WY * shift[0]
+
+    # original sampling grid
+    XX, YY = np.meshgrid(np.arange(w), np.arange(h))
+    coords = [YY + dy, XX + dx]   # map_coordinates expects [row_coords, col_coords]
+
+    warped = np.empty_like(img)
+    for c in range(img.shape[2]):
+        warped[..., c] = ndimage.map_coordinates(img[..., c], coords, order=1)
+
+    return warped
+
+
 
 
 def get_ten_rotation_shifts(data: np.ndarray, rotation_degrees: float, crop_pixels: int):
