@@ -63,8 +63,8 @@ class NetTrainer:
         self.network.context.tick += 1
         data, labels = next(self.batch_iterator)
         device = next(self.network.parameters()).device
-        data = data.to(device)
-        labels = labels.to(device)
+        data = torch.tensor(data, device=device)
+        labels = torch.tensor(labels, device=device)
         pred = self.network.forward(data)
 
         loss = self.criterion(pred, labels)
