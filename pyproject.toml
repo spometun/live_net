@@ -8,5 +8,5 @@ version="0.1"
 python_files = ["*.py"]
 log_cli = true
 filterwarnings = ["ignore:::.*dateutil*", "ignore:::.*importlib*"]
-addopts = "--ignore ./old"
+addopts = "--ignore ./old", "assert=plain"
 

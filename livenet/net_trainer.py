@@ -29,13 +29,13 @@ def get_summary_stat(life_stat: pd.DataFrame):
 
 
 class NetTrainer:
-    def __init__(self, network: torch.nn.Module, batch_iterator: typing.Iterator,
-                 criterion: typing.Callable, optimizer, epoch_size=1, adaptive_lr=False):
+    def __init__(self, network: torch.nn.Module, data_loader,
+                 criterion: typing.Callable, optimizer, adaptive_lr=False):
         self.network = network
-        self.batch_iterator = batch_iterator
+        self.data_loader = data_loader
+        self.data_iter = iter(data_loader)
         self.criterion = criterion
         self.optimizer = optimizer
-        self.epoch_size = epoch_size
         self.history = []
         self.counter = 0
         self.counter_good = 0
@@ -46,7 +46,7 @@ class NetTrainer:
         self.adaptive_lr_decrease_step = 2
         self.adaptive_lr_max_lr = 0.01
         self.adaptive_lr_min_lr = 1e-5
-        self.last_epoch_tick = -1
+        self.last_epoch_tick = self.network.context.tick
         self.last_epoch_all_loss = math.inf
         self._n_loss_increases = 0
         self._need_to_stop = False
@@ -60,11 +60,17 @@ class NetTrainer:
             self._step()
 
     def _step(self):
+        try:
+            data, labels = next(self.data_iter)
+        except StopIteration:
+            self._on_epoch()
+            self.data_iter = iter(self.data_loader)
+            data, labels = next(self.data_iter)
         self.network.context.tick += 1
-        data, labels = next(self.batch_iterator)
+
         device = next(self.network.parameters()).device
-        data = torch.tensor(data, device=device)
-        labels = torch.tensor(labels, device=device)
+        data = data.to(device)
+        labels = labels.to(device)
         pred = self.network.forward(data)
 
         loss = self.criterion(pred, labels)
@@ -82,8 +88,6 @@ class NetTrainer:
             # self._adjust_lr(data, labels, all_loss)
 
         self.counter += 1
-        if self.counter % self.epoch_size == 0:
-            self._on_epoch()
 
     def _adjust_lr(self, data, labels, all_loss):
         with torch.no_grad():
@@ -111,14 +115,15 @@ class NetTrainer:
         grads = utils.get_gradients_dict(self.network)
         epoch_loss_criterion = self.loss_criterion
         epoch_loss_network = self.loss_network
-        good_ratio = self.counter_good / self.epoch_size
+        # good_ratio = self.counter_good / self.epoch_size
         # if self.counter != 0:
-        epoch_loss_criterion /= self.epoch_size
-        epoch_loss_network /= self.epoch_size
+        tick = self.network.context.tick
+        epoch_size = tick - self.last_epoch_tick
+        epoch_loss_criterion /= epoch_size
+        epoch_loss_network /= epoch_size
         self.history.append({"params": params,
                              "loss": epoch_loss_criterion,
                              "loss_reg": epoch_loss_network})
-        tick = self.network.context.tick
         msg = f"{tick}"
         msg += f" {epoch_loss_criterion:.3f}+{epoch_loss_network:.3f}reg"
         msg += f" params={len(params)}"
@@ -129,7 +134,7 @@ class NetTrainer:
                 self._n_loss_increases += 1
             else:
                 self._n_loss_increases = 0
-            if self._n_loss_increases == 3:
+            if self._n_loss_increases == 2:
                 self.optimizer.learning_rate /= 2
             if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
                 self._need_to_stop = True
