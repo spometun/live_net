@@ -4,7 +4,23 @@ import torchvision
 from scipy import ndimage
 import os
 
+from torch.utils.data import Dataset
+
 datasets_dir = f"{os.getenv('HOME')}/datasets/research"
+
+
+class TransformDataset(Dataset):
+    def __init__(self, dataset: Dataset, transform):
+        self.dataset = dataset
+        self.transform  = transform
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+        x = self.transform(x)
+        return x, y
 
 
 def permutate_sync(data1, data2, rng=None):
@@ -98,8 +114,6 @@ def _elastic_transform(img, shift:tuple[int, int]):
     return warped
 
 
-
-
 def get_ten_rotation_shifts(data: np.ndarray, rotation_degrees: float, crop_pixels: int):
     assert data.ndim == 4 # assumes input is nchw
     augmented = []
@@ -183,12 +197,7 @@ def get_mnist_train():
 
 
 def _get_cifar10(train: bool):
-    transform = torchvision.transforms.Compose(
-        [torchvision.transforms.ToTensor()
-            , torchvision.transforms.Normalize([0.5], [0.5])
-         ])
-    dataset = torchvision.datasets.CIFAR10(datasets_dir, train=train,
-                                       download=True, transform=transform)
+    dataset = torchvision.datasets.CIFAR10(datasets_dir, train=train, download=True, transform=torchvision.transforms.PILToTensor())
     loader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
     whole = next(iter(loader))
     data = whole[0]
@@ -205,6 +214,29 @@ def get_cifar10_train():
     data, labels = _get_cifar10(True)
     return data, labels
 
+# cifar10_normalization = torchvision.transforms.Normalize(127, 128
+    # mean=[x / 255.0 for x in [125.3, 123.0, 113.9]],
+    # std=[x / 255.0 for x in [63.0, 62.1, 66.7]],
+# )
+
+cifar10_normalization = torchvision.transforms.Lambda(lambda t: (t.to(torch.float32) - 127) / 128)
+
+cifar10_train_transform = torchvision.transforms.Compose(
+    [
+        # torchvision.transforms.RandomRotation(15),
+        torchvision.transforms.RandomAffine(12, (0.12, 0.12)),
+        # torchvision.transforms.RandomCrop(32, padding=4, padding_mode="edge"),
+        torchvision.transforms.RandomHorizontalFlip(),
+        torchvision.transforms.ColorJitter(0.1, 0.1, 0.1, 0.05),
+        cifar10_normalization
+    ]
+)
+
+cifar10_test_transform = torchvision.transforms.Compose(
+    [
+        cifar10_normalization
+    ]
+)
 
 def to_plain(x, y, downscale=1, to_odd=False, to_gray=False):
     if not isinstance(downscale, tuple):
