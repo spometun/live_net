@@ -54,3 +54,8 @@ Iˈ0.000 loss: train: 0.150 test: 0.672
 Iˈ0.014 accuracy, train: 96.4% test: 88.5%
 Iˈ0.000 loss: train: 0.205 test: 0.664
 Iˈ0.009 accuracy, train: 94.9% test: 88.2%
+
+Iˈ0.000 loss: train: 0.477 test: 0.557
+Iˈ0.001 accuracy, train: 88.5% test: 87.2%
+Iˈ0.000 loss: train: 0.520 test: 0.549
+Iˈ0.001 accuracy, train: 87.4% test: 87.2%
