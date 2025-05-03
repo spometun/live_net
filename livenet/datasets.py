@@ -5,6 +5,8 @@ from scipy import ndimage
 import os
 
 from torch.utils.data import Dataset
+from livenet.data_augment import RandomElasticShift, RandomRotateCrop
+
 
 datasets_dir = f"{os.getenv('HOME')}/datasets/research"
 
@@ -67,51 +69,6 @@ def get_augmented_eight_elastic_shifts(data, labels, shift:int):
     augmented_y = np.repeat(labels, 8, axis=0)
     augmented_x, augmented_y = permutate_sync(augmented_x, augmented_y)
     return augmented_x, augmented_y
-
-
-def _elastic_transform(img, shift:tuple[int, int]):
-    """
-    Apply a smooth, 2‑D “elastic” shift so that the image centre moves by `shift`,
-    while all four edges remain unmoved.
-
-    Parameters
-    ----------
-    img : array_like
-        Input image, either grayscale (H×W) or color (H×W×C).
-    shift : tuple of float (shift_x, shift_y)
-        Horizontal and vertical shift (in pixels) to apply at the image center.
-    Returns
-    -------
-    warped : ndarray
-        The transformed image, same shape and dtype as `img`.
-    """
-    assert img.ndim == 3  # assume HWC
-    img = np.asarray(img)
-    h, w = img.shape[:2]
-    cx, cy = (w - 1) / 2, (h - 1) / 2
-
-    # 1D linear “tent” weights: 1 at centre, 0 at edges
-    x = np.arange(w)
-    y = np.arange(h)
-    wx = 1 - np.abs((x - cx) / cx)
-    wy = 1 - np.abs((y - cy) / cy)
-
-    # build full 2D weight map
-    WX, WY = np.meshgrid(wx, wy)
-
-    # per‑pixel offset fields
-    dx = WX * shift[1]
-    dy = WY * shift[0]
-
-    # original sampling grid
-    XX, YY = np.meshgrid(np.arange(w), np.arange(h))
-    coords = [YY + dy, XX + dx]   # map_coordinates expects [row_coords, col_coords]
-
-    warped = np.empty_like(img)
-    for c in range(img.shape[2]):
-        warped[..., c] = ndimage.map_coordinates(img[..., c], coords, order=1)
-
-    return warped
 
 
 def get_ten_rotation_shifts(data: np.ndarray, rotation_degrees: float, crop_pixels: int):
@@ -224,10 +181,12 @@ cifar10_normalization = torchvision.transforms.Lambda(lambda t: (t.to(torch.floa
 cifar10_train_transform = torchvision.transforms.Compose(
     [
         # torchvision.transforms.RandomRotation(15),
-        torchvision.transforms.RandomAffine(12, (0.12, 0.12)),
+        # torchvision.transforms.RandomAffine(12, (0.12, 0.12)),
         # torchvision.transforms.RandomCrop(32, padding=4, padding_mode="edge"),
         torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.ColorJitter(0.1, 0.1, 0.1, 0.05),
+        RandomElasticShift(max_shift=4),
+        RandomRotateCrop(max_rotation=12),
+        torchvision.transforms.ColorJitter(0.1, 0.1, 0.1, 0.02),
         cifar10_normalization
     ]
 )
