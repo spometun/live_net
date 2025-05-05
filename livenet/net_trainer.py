@@ -89,26 +89,26 @@ class NetTrainer:
 
         self.counter += 1
 
-    def _adjust_lr(self, data, labels, all_loss):
-        with torch.no_grad():
-            pred1 = self.network.forward(data)
-            loss1 = self.criterion(pred1, labels)
-            loss1_network = self.network.internal_loss()
-            all_loss1 = loss1 + loss1_network
-            is_good = all_loss1.detach().item() < all_loss.detach().item()
-            self.counter_good += is_good
-
-            old_lr = self.optimizer.learning_rate
-            if is_good:
-                new_lr = old_lr * self.adaptive_lr_increase_step
-                sign = "+ "
-            else:
-                new_lr = old_lr / self.adaptive_lr_decrease_step
-                sign = "--"
-            new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
-            if sign == "--":
-                LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
-            self.optimizer.learning_rate = new_lr
+    # def _adjust_lr(self, data, labels, all_loss):
+    #     with torch.no_grad():
+    #         pred1 = self.network.forward(data)
+    #         loss1 = self.criterion(pred1, labels)
+    #         loss1_network = self.network.internal_loss()
+    #         all_loss1 = loss1 + loss1_network
+    #         is_good = all_loss1.detach().item() < all_loss.detach().item()
+    #         self.counter_good += is_good
+    #
+    #         old_lr = self.optimizer.learning_rate
+    #         if is_good:
+    #             new_lr = old_lr * self.adaptive_lr_increase_step
+    #             sign = "+ "
+    #         else:
+    #             new_lr = old_lr / self.adaptive_lr_decrease_step
+    #             sign = "--"
+    #         new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
+    #         if sign == "--":
+    #             LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
+    #         self.optimizer.learning_rate = new_lr
 
     def _on_epoch(self):
         params = utils.get_parameters_dict(self.network)
@@ -130,6 +130,7 @@ class NetTrainer:
         if self.adaptive_lr:
             all_loss = epoch_loss_criterion + epoch_loss_network
             k = all_loss / self.last_epoch_all_loss
+            # LOG(self._n_loss_increases, k, all_loss, self.last_epoch_all_loss)
             if k >= 1:
                 self._n_loss_increases += 1
             else:
