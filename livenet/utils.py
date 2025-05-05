@@ -1,11 +1,18 @@
 import math
 import time
+import random
 from typing import Callable
 
+import numpy as np
 import torch
 from torch import Tensor, nn
 
 from ai_libs.simple_log import LOG
+
+def set_seed(seed=0):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def get_parameters_dict(network: torch.nn.Module, clone=True):

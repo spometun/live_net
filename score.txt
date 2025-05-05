@@ -59,3 +59,41 @@ Iˈ0.000 loss: train: 0.477 test: 0.557
 Iˈ0.001 accuracy, train: 88.5% test: 87.2%
 Iˈ0.000 loss: train: 0.520 test: 0.549
 Iˈ0.001 accuracy, train: 87.4% test: 87.2%
+
+Iˈ0.000 loss: train: 0.526 test: 0.654
+Iˈ0.003 accuracy, train: 87.2% test: 85.6%
+Iˈ0.000 loss: train: 0.643 test: 0.544
+Iˈ0.003 accuracy, train: 84.5% test: 87.3%
+
+
+
+Iˈ0.000 loss: train: 0.559 test: 0.674
+Iˈ0.002 accuracy, train: 86.6% test: 85.1%
+Iˈ0.000 loss: train: 0.576 test: 0.526
+Iˈ0.002 accuracy, train: 86.1% test: 87.8%
+
+# Resnet9
+Iˈ0.000 loss: train: 0.417 test: 0.655
+Iˈ0.001 accuracy, train: 89.8% test: 86.8%
+Iˈ0.000 loss: train: 0.437 test: 0.511
+Iˈ0.001 accuracy, train: 89.4% test: 88.9%
+Iˈ0.000 loss: train: 0.075 test: 0.456
+Iˈ0.001 accuracy, train: 98.2% test: 93.1%
+Iˈ0.000 loss: train: 0.360 test: 0.419
+Iˈ0.001 accuracy, train: 91.3% test: 90.4%
+
+# L1
+Iˈ0.000 loss: train: 0.239 test: 0.382
+Iˈ0.001 accuracy, train: 94.2% test: 91.7%
+Iˈ0.000 loss: train: 0.219 test: 0.364
+Iˈ0.001 accuracy, train: 94.7% test: 91.9%
+
+# L1 heavy
+Iˈ0.000 loss: train: 0.565 test: 0.549
+Iˈ0.001 accuracy, train: 86.6% test: 87.6%
+Iˈ0.000 loss: train: 0.368 test: 0.426
+Iˈ0.001 accuracy, train: 91.1% test: 90.7%
+Iˈ0.000 loss: train: 0.248 test: 0.449
+Iˈ0.001 accuracy, train: 94.0% test: 91.1%
+Iˈ0.000 loss: train: 0.131 test: 0.416
+Iˈ0.001 accuracy, train: 97.0% test: 91.8%
