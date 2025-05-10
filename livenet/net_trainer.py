@@ -1,5 +1,6 @@
 import math
 import typing
+from collections import deque
 
 import numpy as np
 import torch
@@ -49,6 +50,7 @@ class NetTrainer:
         self.last_epoch_tick = self.network.context.tick
         self.last_epoch_all_loss = math.inf
         self._n_loss_increases = 0
+        self.loss_history = deque(maxlen=6)
         self._need_to_stop = False
         self.clear_life_stat = True
 
@@ -89,27 +91,6 @@ class NetTrainer:
 
         self.counter += 1
 
-    # def _adjust_lr(self, data, labels, all_loss):
-    #     with torch.no_grad():
-    #         pred1 = self.network.forward(data)
-    #         loss1 = self.criterion(pred1, labels)
-    #         loss1_network = self.network.internal_loss()
-    #         all_loss1 = loss1 + loss1_network
-    #         is_good = all_loss1.detach().item() < all_loss.detach().item()
-    #         self.counter_good += is_good
-    #
-    #         old_lr = self.optimizer.learning_rate
-    #         if is_good:
-    #             new_lr = old_lr * self.adaptive_lr_increase_step
-    #             sign = "+ "
-    #         else:
-    #             new_lr = old_lr / self.adaptive_lr_decrease_step
-    #             sign = "--"
-    #         new_lr = np.clip(new_lr, self.adaptive_lr_min_lr, self.adaptive_lr_max_lr)
-    #         if sign == "--":
-    #             LOG(f"{sign} {old_lr:.5f} -> {new_lr:.5f}")
-    #         self.optimizer.learning_rate = new_lr
-
     def _on_epoch(self):
         params = utils.get_parameters_dict(self.network)
         grads = utils.get_gradients_dict(self.network)
@@ -129,18 +110,19 @@ class NetTrainer:
         msg += f" params={len(params)}"
         if self.adaptive_lr:
             all_loss = epoch_loss_criterion + epoch_loss_network
-            k = all_loss / self.last_epoch_all_loss
-            # LOG(self._n_loss_increases, k, all_loss, self.last_epoch_all_loss)
-            if k >= 1:
-                self._n_loss_increases += 1
-            else:
-                self._n_loss_increases = 0
-            if self._n_loss_increases == 2:
-                self.optimizer.learning_rate /= 2
-            if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
-                self._need_to_stop = True
+            self.loss_history.append(all_loss)
+            n = self.loss_history.maxlen
+            if len(self.loss_history) == n:
+                h = list(self.loss_history)
+                past = min(h[:n//2])
+                cur = min(h[n//2:])
+                if cur >= past:
+                    self.optimizer.learning_rate /= 2
+                    self.loss_history.clear()
             msg += f" lr={self.optimizer.learning_rate:.5f}"
             self.last_epoch_all_loss = all_loss
+            if self.optimizer.learning_rate < self.adaptive_lr_min_lr:
+                self._need_to_stop = True
 
         df = pd.DataFrame(self.network.context.life_stat)
         if len(df) > 0:
