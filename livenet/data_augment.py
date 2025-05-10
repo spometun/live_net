@@ -154,7 +154,7 @@ class RandomRotateCrop:
         arr = img.detach().cpu().numpy()
 
         # rotate around axes 1 (H) and 2 (W), expanding output
-        rotated = ndimage.rotate(arr, angle, axes=(1, 2), mode="reflect")
+        rotated = ndimage.rotate(arr, angle, axes=(1, 2), order=1, mode="reflect")
 
         _, H2, W2 = rotated.shape
         # integer margins for center crop back to (H, W)

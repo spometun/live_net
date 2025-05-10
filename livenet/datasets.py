@@ -1,9 +1,13 @@
+import random
+
 import numpy as np
 import torch
 import torchvision
 from scipy import ndimage
 import os
+import random
 
+import torchvision.transforms as T
 from torch.utils.data import Dataset
 from livenet.data_augment import RandomElasticShift, RandomRotateCrop
 
@@ -178,15 +182,67 @@ def get_cifar10_train():
 
 cifar10_normalization = torchvision.transforms.Lambda(lambda t: (t.to(torch.float32) - 127) / 128)
 
+auto_aug_policy = [
+    #(("Invert", 0.1, None), ("Contrast", 0.2, 6)),
+    # (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
+    (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
+    # (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
+    (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
+    (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
+    (("Color", 0.4, 3), ("Brightness", 0.3, 7)),
+    (("Sharpness", 0.3, 9), ("Brightness", 0.3, 9)),
+    (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
+    (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
+    # (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
+    (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
+    (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
+    (("Brightness", 0.3, 6), ("Color", 0.2, 8)),
+    # (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
+    (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
+    (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
+    (("Color", 0.9, 9), ("Equalize", 0.6, None)),
+    (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
+    (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
+    (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
+    # (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
+    # (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
+    # (("Equalize", 0.8, None), ("Invert", 0.1, None)),
+    # (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
+]
+
+auto_aug_policy1 = [
+    (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
+]
+
+auto_aug = T.AutoAugment()
+auto_aug.policies = auto_aug_policy
+
+def with_prob(f, probability):
+    rng = random.Random(x=0)
+    def f_prob(x):
+        r = rng.random()
+        if r < probability:
+            return f(x)
+        return x
+    return f_prob
+
+
+def func_chain(f1, f2):
+    def chain_impl(x):
+        return f1(f2(x))
+    return chain_impl
+
+elastic = RandomElasticShift(max_shift=4)
+rot_crop = RandomRotateCrop(max_rotation=15)
+
 cifar10_train_transform = torchvision.transforms.Compose(
     [
         # torchvision.transforms.RandomRotation(15),
         # torchvision.transforms.RandomAffine(12, (0.12, 0.12)),
         # torchvision.transforms.RandomCrop(32, padding=4, padding_mode="edge"),
         torchvision.transforms.RandomHorizontalFlip(),
-        RandomElasticShift(max_shift=4),
-        RandomRotateCrop(max_rotation=12),
-        torchvision.transforms.ColorJitter(0.1, 0.1, 0.1, 0.02),
+        with_prob(func_chain(rot_crop, elastic), 0.5),
+        auto_aug,
         cifar10_normalization
     ]
 )
