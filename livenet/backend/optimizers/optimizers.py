@@ -6,21 +6,23 @@ from livenet.backend.observability import LifeStatContributor
 from livenet.backend.optimizers.ad_step_filter import AdStepFilter, UnitFilter
 
 
-class MyOptimizer(torch.optim.Optimizer):
+class MyOptimizer:
     def __init__(self, parameters, lr=0.01):
         self._params: list[torch.nn.parameter.Parameter] = list(parameters)
-        self._lr = lr
-        # super(MyOptimizer, self).__init__(parameters, {})
+        self.learning_rate = lr
 
     def zero_grad(self) -> None:
         for p in self._params:
             if p.grad is not None:
                 p.grad.zero_()
 
+    @torch.no_grad()
     def step(self):
+        lr = self.learning_rate
         for p in self._params:
-            # p.data = p.data * (1 - torch.sign(p.grad.data) * self._lr)
-            p.data.add_(p.grad.data, alpha=-self._lr)
+            if p.grad is not None:
+                update = torch.sign(p.grad)
+                p.add_(- lr * update)
 
 
 class SGDForParameter:
