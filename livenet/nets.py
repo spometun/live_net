@@ -7,6 +7,7 @@ from .backend import core, optimizers
 from .backend.core import DestinationNeuron, InputNeuron, RegularNeuron, Context
 from .backend.graph import NodesHolder
 import livenet
+from livenet.backend.optimizers.optimizers import MyOptimizer
 
 
 def criterion_1(logits: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
@@ -242,7 +243,8 @@ def create_optimizer(net: torch.nn.Module):
         optimizer = optimizers.optimizers.LiveNetOptimizer(net, lr=0.01)
         # optimizer = torch.optim.Adam(net.parameters())
     else:
-        print("Torch")
+        print("my Torch")
         #optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.SGD, net.parameters(), lr=0.01)
-        optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
+        # optimizer = optimizers.optimizers.optimizer_with_lr_property(torch.optim.Adam, net.parameters(), betas=(0.0, 0.95))
+        optimizer = optimizers.optimizers.MyOptimizer(net.parameters())
     return optimizer
