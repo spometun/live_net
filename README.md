@@ -8,8 +8,6 @@ Worked on in my own time between 2022 and 2025: V1 mostly in 2022-2024, V2 in 20
 #### Goal: Examine death of unnecessary neurons in flexible "any topology" per-single neuron graph.
 Implemented per-single-neuron dynamic graph with capability of death of useless neurons, dynamic birth was also in mind, but never implemented.
 Neurons were brought to "useless" state by imposing reasonable L1 regularization. Those which started to jump around zero, eventually die in course of training.
-With this approach, I was able to obtain 2-layer perceptron, with 40 neurons in total, which classifies CIFAR10 with 30% accuracy
-(number from a run at the time, not re-verified since).
 
 After a while I decided that implementing larger convolutional classifier using per-single-neuron graph is not practical and moved to V2.
 
